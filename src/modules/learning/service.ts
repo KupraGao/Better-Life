@@ -31,16 +31,34 @@ function courseProjection(locale: Locale, userId: string | null) {
 
 type CourseRecord = Prisma.CourseGetPayload<{ select: ReturnType<typeof courseProjection> }>;
 
+function titled(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  return value;
+}
+
+function readLocaleTitle(titles: unknown, locale: string) {
+  if (!titles || typeof titles !== "object" || Array.isArray(titles) || !(locale in titles)) return "";
+  return titled(Reflect.get(titles, locale));
+}
+
+function moduleTitle(titles: unknown, locale: Locale, position: number) {
+  const own = readLocaleTitle(titles, locale);
+  if (own) return { title: own, fallback: false };
+  const other = readLocaleTitle(titles, locale === "ka" ? "en" : "ka");
+  if (other) return { title: other, fallback: true };
+  return { title: `${locale === "ka" ? "მოდული" : "Module"} ${position}`, fallback: false };
+}
+
 function describeCourse(course: CourseRecord, locale: Locale) {
   const membership = course.enrollments[0];
   const now = new Date();
-  const modules = course.modules.map((module) => {
-    const titles = module.titles;
-    const title = titles && typeof titles === "object" && !Array.isArray(titles) ? titles[locale] : undefined;
+  const modules = course.modules.map((courseModule) => {
+    const named = moduleTitle(courseModule.titles, locale, courseModule.position);
     return {
-      id: module.id,
-      title: typeof title === "string" && title.trim() ? title : `${locale === "ka" ? "მოდული" : "Module"} ${module.position}`,
-      lessons: module.items.map((item) => ({
+      id: courseModule.id,
+      title: named.title,
+      fallback: named.fallback,
+      lessons: courseModule.items.map((item) => ({
         id: item.id,
         title: item.translations[0].title,
         preview: item.preview,
@@ -49,7 +67,7 @@ function describeCourse(course: CourseRecord, locale: Locale) {
       }))
     };
   });
-  const lessons = modules.flatMap((module) => module.lessons);
+  const lessons = modules.flatMap((courseModule) => courseModule.lessons);
   const completed = lessons.filter((item) => item.completed).length;
   return {
     id: course.id, slug: course.slug, freeEnrollment: course.freeEnrollment, coverImage: course.coverImage,
@@ -106,7 +124,7 @@ export async function enrollForFree(store: Store, locale: Locale, slug: string, 
 export async function readLesson(store: Store, locale: Locale, slug: string, itemId: string, actorId: string | null) {
   if (!uuid.test(itemId)) return null;
   const course = await readCourse(store, locale, slug, actorId);
-  const lessons = course?.modules.flatMap((module) => module.lessons);
+  const lessons = course?.modules.flatMap((courseModule) => courseModule.lessons);
   const current = lessons?.find((item) => item.id === itemId);
   if (!course || !lessons || !current?.accessible) return null;
 

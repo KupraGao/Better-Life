@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { isLocale } from "@/i18n";
 import { submitAuth, type AuthMode } from "@/modules/identity/actions";
 import { identityMessages } from "@/modules/identity/messages";
+import { PendingButton } from "@/modules/identity/pending-button";
 import { returnPath } from "@/modules/identity/paths";
 import { getCurrentUser } from "@/modules/identity/session";
 import styles from "@/modules/identity/identity.module.css";
@@ -34,7 +35,7 @@ export default async function IdentityPage({ params, searchParams }: PageProps<"
             <label>{t.password}<input type="password" name="password" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={mode === "login" ? 1 : 10} maxLength={128} required />
               {mode !== "login" && <small>{t.hint}</small>}
             </label>}
-          <button type="submit" className="button primary-button">{t.submit[mode]}</button>
+          <PendingButton className="button primary-button" label={t.submit[mode]} />
         </form>
         <div className={styles.links}>
           {mode === "login" && <a href={switchTo("forgot-password")}>{t["forgot-password"]}</a>}

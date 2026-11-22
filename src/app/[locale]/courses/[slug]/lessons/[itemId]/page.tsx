@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SubmitButton } from "@/components/submit-button";
 import { db } from "@/lib/db";
+import { getMessages } from "@/i18n";
 import { getCurrentUser } from "@/modules/identity/session";
 import { RichText, LessonVideo } from "@/modules/catalog/lesson-content";
 import { completeAction } from "@/modules/learning/actions";
@@ -15,20 +17,31 @@ export default async function Lesson({ params }: { params: Promise<{ locale: str
   const route = await params;
   const locale = courseLocale(route.locale);
   const text = learningLabels[locale];
+  const pending = getMessages(locale).forms.pending;
   const user = await getCurrentUser();
-  const lesson = await db.$transaction(
-    (tx) => readLesson(tx, locale, route.slug, route.itemId, user?.id ?? null), { isolationLevel: "RepeatableRead" }
+  const actorId = user?.id ?? null;
+  const contentLocale = locale === "ka" ? "en" : "ka";
+  const requested = await db.$transaction(
+    (tx) => readLesson(tx, locale, route.slug, route.itemId, actorId), { isolationLevel: "RepeatableRead" }
+  );
+  const lesson = requested ?? await db.$transaction(
+    (tx) => readLesson(tx, contentLocale, route.slug, route.itemId, actorId), { isolationLevel: "RepeatableRead" }
   );
   if (!lesson) notFound();
+  const missingLanguage = !requested;
+  const shownLocale = missingLanguage ? contentLocale : locale;
   const { course, current, assets } = lesson;
   const courseUrl = coursePath(locale, course.slug);
-  const mediaHref = (id: string) => `/api/media/${id}?locale=${locale}`;
+  const mediaHref = (id: string) => `/api/media/${id}?locale=${shownLocale}`;
   const images = assets.filter((asset) => asset.kind === "IMAGE");
   const files = assets.filter((asset) => asset.kind === "ATTACHMENT");
   return (
     <main id="main" tabIndex={-1} className={`container ${styles.page}`}>
       <Link className={styles.back} href={courseUrl}>← {course.title}</Link>
-      <header className={styles.heading}><h1>{current.title}</h1></header>
+      <header className={styles.heading}>
+        {missingLanguage && <p className={styles.meta} role="status">{text.missingLanguage}</p>}
+        <h1>{current.title}</h1>
+      </header>
       <div className={styles.columns}>
         <article className={styles.body}>
           <LessonVideo source={lesson.videoSource} reference={lesson.videoRef} />
@@ -43,10 +56,13 @@ export default async function Lesson({ params }: { params: Promise<{ locale: str
           </ul></section>}
         </article>
         <aside className={styles.panel}>
-          {course.enrolled ? <>
+          {missingLanguage ? <>
+            <p role="status">{text.missingLanguage}</p>
+            <Link className="text-link" href={lessonPath(contentLocale, course.slug, current.id)}>{text.openAvailable}</Link>
+          </> : course.enrolled ? <>
             <Progress locale={locale} completed={course.completed} total={course.total} />
             {!current.completed
-              ? <form action={completeAction.bind(null, locale, course.slug, current.id)}><button className="button primary-button">{text.complete}</button></form>
+              ? <form action={completeAction.bind(null, locale, course.slug, current.id)}><SubmitButton className="button primary-button" pending={pending}>{text.complete}</SubmitButton></form>
               : <p className={styles.complete}>✓ {text.done}</p>}
             {lesson.next && <Link className="text-link" href={lessonPath(locale, course.slug, lesson.next.id)}>{text.next} →</Link>}
             {course.finished && <Link className="text-link" href={`/${locale}/dashboard`}>{text.dashboard}</Link>}

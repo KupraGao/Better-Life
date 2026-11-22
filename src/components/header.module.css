@@ -76,10 +76,20 @@
   background: transparent;
 }
 
+.servicesButton {
+  list-style: none;
+}
+
+.servicesButton::-webkit-details-marker,
+.servicesButton::marker {
+  display: none;
+  content: "";
+}
+
 .navigation .current,
 .navigation > a:hover,
 .servicesButton:hover,
-.servicesButton[aria-expanded="true"],
+.services[open] > .servicesButton,
 .language:hover {
   color: var(--blue-strong);
 }
@@ -107,12 +117,17 @@
   transition: transform 160ms ease;
 }
 
-.servicesButton[aria-expanded="true"] .chevron {
+.services[open] > .servicesButton .chevron {
   transform: rotate(180deg);
+}
+
+.services:not([open]) .dropdown {
+  display: none;
 }
 
 .dropdown {
   position: absolute;
+  z-index: 20;
   top: 100%;
   left: -14px;
   min-width: 180px;
@@ -174,7 +189,7 @@
   display: none;
 }
 
-.header :is(a, button):focus-visible {
+.header :is(a, button, summary):focus-visible {
   outline: 3px solid var(--blue-strong);
   outline-offset: 3px;
 }

@@ -1,10 +1,10 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { db } from "@/lib/db";
 import type { Locale } from "@/i18n";
-import { authClient, sessionCookie } from "./client";
+import { authClient, isAuthTransportError, sessionCookie } from "./client";
 
 export async function writableAuthClient() {
   const jar = await cookies();
@@ -18,8 +18,16 @@ export const getCurrentUser = cache(async () => {
   const jar = await cookies();
   if (!jar.getAll().some(({ name }) => name === sessionCookie || name.startsWith(sessionCookie + "."))) return null;
   const auth = authClient({ getAll: () => jar.getAll(), setAll: () => {} });
-  const { data: { user }, error } = await auth.auth.getUser();
-  if (error || !user) return null;
+  let user;
+  try {
+    const result = await auth.auth.getUser();
+    if (result.error || !result.data.user) return null;
+    user = result.data.user;
+  } catch (error) {
+    unstable_rethrow(error);
+    if (isAuthTransportError(error)) return null;
+    throw error;
+  }
   const displayName = typeof user.user_metadata?.displayName === "string" ? user.user_metadata.displayName.trim().slice(0, 90) : "";
   const select = { id: true, displayName: true, role: true } as const;
   const profile = await db.appUser.findUnique({ where: { id: user.id }, select });

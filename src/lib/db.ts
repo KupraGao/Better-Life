@@ -10,5 +10,22 @@ function createClient() {
 }
 
 const shared = globalThis as typeof globalThis & { betterLifeDb?: PrismaClient };
-export const db = shared.betterLifeDb ?? createClient();
-if (process.env.NODE_ENV !== "production") shared.betterLifeDb = db;
+let productionClient: PrismaClient | undefined;
+
+function getClient() {
+  if (process.env.NODE_ENV !== "production") {
+    shared.betterLifeDb ??= createClient();
+    return shared.betterLifeDb;
+  }
+  productionClient ??= createClient();
+  return productionClient;
+}
+
+// Importing this module must not open a connection. Next evaluates route modules while collecting the build.
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, property, receiver) {
+    const client = getClient();
+    const value: unknown = Reflect.get(client, property, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

@@ -8,10 +8,18 @@ import pg from "pg";
 async function localConnection(key: "DATABASE_URL" | "DB_ADMIN_URL") {
   const env = parseEnv(await readFile(".local/db/env", "utf8"));
   const url = new URL(env[key]);
+  assert.equal(url.protocol, "postgresql:");
   assert.equal(url.hostname, "127.0.0.1");
   assert.equal(url.port, "55432");
   assert.equal(url.pathname, "/betterlife");
-  const conn = new pg.Client({ connectionString: url.href });
+  assert.equal(url.searchParams.has("host") || url.searchParams.has("port") || url.searchParams.has("hostaddr"), false);
+  const conn = new pg.Client({
+    host: "127.0.0.1",
+    port: 55432,
+    database: "betterlife",
+    user: url.username,
+    password: url.password,
+  });
   await conn.connect();
   return conn;
 }

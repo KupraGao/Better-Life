@@ -58,9 +58,9 @@ export async function createCourse(actorId: string, form: FormData) {
 }
 
 async function requireModule(tx: Transaction, moduleId: string, courseId: string) {
-  const module = await tx.module.findFirst({ where: { id: moduleId, courseId, archivedAt: null } });
-  if (!module) throw new EditorError("denied");
-  return module;
+  const courseModule = await tx.module.findFirst({ where: { id: moduleId, courseId, archivedAt: null } });
+  if (!courseModule) throw new EditorError("denied");
+  return courseModule;
 }
 
 async function requireLesson(tx: Transaction, itemId: string, courseId: string) {
@@ -141,8 +141,8 @@ export async function mutateCourse(actorId: string, courseId: string, intent: st
         break;
       }
       case "module-edit": {
-        const module = await requireModule(tx, identifier(form, "target"), courseId);
-        await tx.module.update({ where: { id: module.id }, data: { titles: { ...moduleTitles(module.titles), [locale]: value(form, "title", 180) } } });
+        const courseModule = await requireModule(tx, identifier(form, "target"), courseId);
+        await tx.module.update({ where: { id: courseModule.id }, data: { titles: { ...moduleTitles(courseModule.titles), [locale]: value(form, "title", 180) } } });
         break;
       }
       case "module-move":
@@ -150,9 +150,9 @@ export async function mutateCourse(actorId: string, courseId: string, intent: st
         await reorder(tx, courseId, form, intent === "module-move");
         break;
       case "lesson-new": {
-        const module = await requireModule(tx, identifier(form, "target"), courseId);
-        const last = await tx.learningItem.aggregate({ where: { moduleId: module.id }, _max: { position: true } });
-        await tx.learningItem.create({ data: { moduleId: module.id, position: (last._max.position ?? 0) + 1,
+        const courseModule = await requireModule(tx, identifier(form, "target"), courseId);
+        const last = await tx.learningItem.aggregate({ where: { moduleId: courseModule.id }, _max: { position: true } });
+        await tx.learningItem.create({ data: { moduleId: courseModule.id, position: (last._max.position ?? 0) + 1,
           translations: { create: { locale: "ka", title: value(form, "title", 180), body: parseText(value(form, "body", 32000)) } } } });
         break;
       }

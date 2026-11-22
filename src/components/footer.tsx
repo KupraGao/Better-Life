@@ -15,9 +15,9 @@ export function Footer({ locale }: { locale: Locale }) {
           </div>
           <nav aria-label={nav.footer} className="footer-nav">
             <h2>{footer.navigation}</h2>
-            <a href="#courses">{nav.courses}</a>
-            <a href="#books">{nav.books}</a>
-            <a href="#about">{nav.about}</a>
+            <a href={`/${locale}#courses`}>{nav.courses}</a>
+            <a href={`/${locale}#books`}>{nav.books}</a>
+            <a href={`/${locale}#about`}>{nav.about}</a>
           </nav>
           <div className="footer-contact">
             <h2>{contact.title}</h2>

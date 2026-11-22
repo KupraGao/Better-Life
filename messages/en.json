@@ -37,7 +37,7 @@
       {
         "title": "Dyslexia",
         "category": "Special education",
-        "href": "https://betterlife.ge/en/courses/დისლექსია/"
+        "href": "/en/courses"
       }
     ]
   },
@@ -47,13 +47,13 @@
         "slug": "decisions",
         "title": "Life is colored by the right decisions",
         "language": "English edition",
-        "href": "https://betterlife.ge/en/product/life-is-colored-by-the-right-decisions/"
+        "href": "/en#books"
       },
       {
         "slug": "roles",
         "title": "People over roles — not roles over people.",
         "language": "English edition",
-        "href": "https://betterlife.ge/en/product/people-over-roles-not-roles-over-people/"
+        "href": "/en#books"
       }
     ]
   },
@@ -65,17 +65,17 @@
       {
         "title": "For teenagers",
         "description": "Discover your strengths and explore possible careers.",
-        "href": "https://betterlife.ge/en/მოზარდთათვის-2/"
+        "href": "/en#programmes"
       },
       {
         "title": "For adults",
         "description": "Set personal and professional goals and find a balance between them.",
-        "href": "https://betterlife.ge/en/შენთვის/"
+        "href": "/en#programmes"
       },
       {
         "title": "For organisations",
         "description": "Programmes that support the development of teams and individuals.",
-        "href": "https://betterlife.ge/en/კომპანიებს/"
+        "href": "/en#programmes"
       }
     ]
   },
@@ -173,6 +173,27 @@
     "newModuleHelp": "New modules and lessons start with Georgian content.",
     "open": "View course",
     "bodyKa": "Georgian lesson content",
-    "descriptionKa": "Georgian description"
+    "descriptionKa": "Georgian description",
+    "pending": "Saving…",
+    "missingLanguage": "This language is not ready yet. Showing the available translation.",
+    "previous": "Previous",
+    "nextPage": "Next",
+    "pageNav": "User pages"
+  },
+  "forms": {
+    "pending": "Sending…"
+  },
+  "status": {
+    "loadingEyebrow": "Loading",
+    "loadingTitle": "Loading this page",
+    "loadingBody": "Please wait.",
+    "errorEyebrow": "Error",
+    "errorTitle": "This page could not be loaded",
+    "errorBody": "Try again. Technical details are not shown here.",
+    "retry": "Try again",
+    "notFoundEyebrow": "Not found",
+    "notFoundTitle": "This page does not exist",
+    "notFoundBody": "The link changed or the page was removed.",
+    "home": "Back to home"
   }
 }

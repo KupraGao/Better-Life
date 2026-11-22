@@ -1,11 +1,11 @@
 import "server-only";
 import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
+import { appOrigin, sessionCookieAttributes } from "./origin";
 
 export const sessionCookie = "betterlife-auth";
 
-export function appOrigin() {
-  return new URL(process.env.APP_ORIGIN || "http://127.0.0.1:3000").origin;
-}
+export { appOrigin } from "./origin";
+export { isAuthTransportError } from "./transport";
 
 export function authClient(cookies: CookieMethodsServer) {
   const url = process.env.SUPABASE_URL;
@@ -25,7 +25,7 @@ export function authClient(cookies: CookieMethodsServer) {
   };
   return createServerClient(url, key, {
     cookies,
-    cookieOptions: { name: sessionCookie, httpOnly: true, sameSite: "lax", secure: appOrigin().startsWith("https:") },
+    cookieOptions: { name: sessionCookie, ...sessionCookieAttributes(process.env.NODE_ENV, appOrigin) },
     global: { fetch: fetchAuth },
   });
 }

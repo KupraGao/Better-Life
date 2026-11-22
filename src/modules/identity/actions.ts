@@ -1,8 +1,8 @@
 "use server";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { isLocale, type Locale } from "@/i18n";
 import { writableAuthClient } from "./session";
-import { appOrigin } from "./client";
+import { appOrigin, isAuthTransportError } from "./client";
 import { returnPath } from "./paths";
 
 export type AuthMode = "login" | "register" | "forgot-password" | "reset-password";
@@ -25,33 +25,57 @@ export async function submitAuth(locale: Locale, mode: AuthMode, form: FormData)
   const callback = new URL(`/${locale}/auth/callback`, appOrigin());
   callback.searchParams.set("next", mode === "forgot-password" ? `/${locale}/reset-password` : next);
 
-  if (mode === "forgot-password") {
-    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: callback.href });
-    if (error && (error.status === 429 || (error.status ?? 0) >= 500)) result(locale, mode, "unavailable", next);
-    result(locale, mode, "sent", next);
+  let outcome: { mode: AuthMode; message: string } | null = null;
+  try {
+    if (mode === "forgot-password") {
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: callback.href });
+      outcome = { mode, message: isAuthTransportError(error) ? "unavailable" : "sent" };
+    } else if (mode === "register") {
+      const { data, error } = await client.auth.signUp({ email, password, options: { data: { displayName: name }, emailRedirectTo: callback.href } });
+      if (isAuthTransportError(error)) outcome = { mode, message: "unavailable" };
+      else if (error) outcome = { mode, message: "registerFailed" };
+      else if (!data.session) outcome = { mode, message: "confirm" };
+    } else if (mode === "login") {
+      const { error } = await client.auth.signInWithPassword({ email, password });
+      if (isAuthTransportError(error)) outcome = { mode, message: "unavailable" };
+      else if (error) outcome = { mode, message: error.code === "email_not_confirmed" ? "confirm" : "loginFailed" };
+    } else {
+      const { data, error: sessionError } = await client.auth.getUser();
+      if (isAuthTransportError(sessionError)) outcome = { mode, message: "unavailable" };
+      else if (!data.user) outcome = { mode: "forgot-password", message: "expired" };
+      else {
+        const { error } = await client.auth.updateUser({ password });
+        if (isAuthTransportError(error)) outcome = { mode, message: "unavailable" };
+        else if (error) outcome = { mode, message: "passwordFailed" };
+        else {
+          const signedOut = await client.auth.signOut({ scope: "global" });
+          outcome = isAuthTransportError(signedOut.error)
+            ? { mode, message: "unavailable" }
+            : { mode: "login", message: "changed" };
+        }
+      }
+    }
+  } catch (error) {
+    unstable_rethrow(error);
+    if (!isAuthTransportError(error)) throw error;
+    outcome = { mode, message: "unavailable" };
   }
-  if (mode === "register") {
-    const { data, error } = await client.auth.signUp({ email, password, options: { data: { displayName: name }, emailRedirectTo: callback.href } });
-    if (error) result(locale, mode, error.status === 429 ? "unavailable" : "registerFailed", next);
-    if (!data.session) result(locale, mode, "confirm", next);
-  } else if (mode === "login") {
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    if (error) result(locale, mode, error.code === "email_not_confirmed" ? "confirm" : "loginFailed", next);
-  } else {
-    const { data } = await client.auth.getUser();
-    if (!data.user) result(locale, "forgot-password", "expired", next);
-    const { error } = await client.auth.updateUser({ password });
-    if (error) result(locale, mode, "passwordFailed", next);
-    await client.auth.signOut({ scope: "global" });
-    result(locale, "login", "changed", next);
-  }
+  if (outcome) result(locale, outcome.mode, outcome.message, next);
   redirect(next);
 }
 
 export async function logout(locale: Locale) {
   if (!isLocale(locale)) throw new Error("Invalid language");
   const client = await writableAuthClient();
-  const { error } = await client.auth.signOut({ scope: "local" });
-  if (error) throw new Error("Sign out failed");
-  redirect(`/${locale}/login`);
+  let transport = false;
+  try {
+    const { error } = await client.auth.signOut({ scope: "local" });
+    if (isAuthTransportError(error)) transport = true;
+    else if (error) throw new Error("Sign out failed");
+  } catch (error) {
+    unstable_rethrow(error);
+    if (!isAuthTransportError(error)) throw error;
+    transport = true;
+  }
+  redirect(transport ? `/${locale}/login?message=unavailable` : `/${locale}/login`);
 }

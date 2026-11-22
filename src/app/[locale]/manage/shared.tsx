@@ -1,4 +1,5 @@
 import type { Messages } from "@/i18n";
+import { SubmitButton } from "@/components/submit-button";
 import styles from "./manage.module.css";
 
 export function Notice({ notice, t }: { notice?: string; t: Messages["manage"] }) {
@@ -21,7 +22,7 @@ export function Move({ rows, index, action, t }: {
       <input type="hidden" name="target" value={rows[index].id} />
       <input type="hidden" name="direction" value={direction} />
       <input type="hidden" name="neighbor" value={neighbor.id} />
-      <button type="submit">{direction === "up" ? "↑" : "↓"} {t[direction]}</button>
+      <SubmitButton pending={t.pending}>{direction === "up" ? "↑" : "↓"} {t[direction]}</SubmitButton>
     </form>;
   })}</div>;
 }

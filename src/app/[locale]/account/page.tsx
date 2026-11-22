@@ -3,6 +3,7 @@ import { isLocale } from "@/i18n";
 import { requireUser } from "@/modules/identity/session";
 import { logout } from "@/modules/identity/actions";
 import { identityMessages } from "@/modules/identity/messages";
+import { PendingButton } from "@/modules/identity/pending-button";
 import styles from "@/modules/identity/identity.module.css";
 
 export default async function Account({ params }: PageProps<"/[locale]/account">) {
@@ -16,7 +17,7 @@ export default async function Account({ params }: PageProps<"/[locale]/account">
     <div className={styles.form}>
       <a className="button primary-button" href={`/${locale}/dashboard`}>{t.dashboard}</a>
       {user.role !== "STUDENT" && <a className="button secondary-button" href={`/${locale}/manage`}>{t.manage}</a>}
-      <form action={logout.bind(null, locale)}><button className="button secondary-button">{t.logout}</button></form>
+      <form action={logout.bind(null, locale)}><PendingButton className="button secondary-button" label={t.logout} /></form>
     </div>
   </section></main>;
 }

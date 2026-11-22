@@ -51,7 +51,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             <div className="programme-list" id="programmes">
               <h3>{services.title}</h3>
               {services.items.map((programme) =>
-                <a key={programme.href} href={programme.href}>
+                <a key={programme.title} href={programme.href}>
                   <span><strong>{programme.title}</strong><span>{programme.description}</span></span><Icon name="external" size={16} />
                 </a>
               )}

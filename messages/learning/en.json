@@ -32,5 +32,7 @@
   "download": "Download",
   "returnCourse": "Back to course",
   "previewNote": "You are viewing a preview. Enroll in the course to save your progress.",
-  "wait": "Your next lesson is not available yet."
+  "wait": "Your next lesson is not available yet.",
+  "missingLanguage": "This content is not in this language yet. The available translation is shown.",
+  "openAvailable": "Open the available language"
 }

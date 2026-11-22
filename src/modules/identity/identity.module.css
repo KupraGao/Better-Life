@@ -8,6 +8,7 @@
 .form input:focus-visible { outline: 2px solid var(--blue-strong); }
 .form small { font-weight: 400; }
 .form button { cursor: pointer; }
+.form button:disabled { cursor: progress; opacity: 0.72; }
 .links { display: grid; gap: 12px; margin-top: 21px; }
 .links a { color: var(--blue-strong); text-decoration: underline; text-underline-offset: 3px; }
 .feedback { margin-top: 16px; padding: 10px 14px; border-left: 3px solid var(--blue); background: color-mix(in srgb,var(--sky) 18%,white); }

@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/icon";
-import type { Locale, Messages } from "@/i18n";
+import { swapLocalePath, type Locale, type Messages } from "@/i18n";
 import styles from "./header.module.css";
 
 type HeaderNavigationProps = {
@@ -13,17 +14,71 @@ type HeaderNavigationProps = {
   registerHref: string;
 };
 
+function useLanguageHref(locale: Locale) {
+  const pathname = usePathname() || `/${locale}`;
+  const searchParams = useSearchParams();
+  const nextLocale = locale === "ka" ? "en" : "ka";
+  const [hash, setHash] = useState("");
+
+  useEffect(() => {
+    const read = () => setHash(window.location.hash);
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, [pathname]);
+
+  const query = searchParams.toString();
+  return `${swapLocalePath(pathname, nextLocale)}${query ? `?${query}` : ""}${hash}`;
+}
+
+function LanguageSwitch({ locale, label }: { locale: Locale; label: string }) {
+  const nextLocale = locale === "ka" ? "en" : "ka";
+  const href = useLanguageHref(locale);
+  return (
+    <a
+      className={styles.language}
+      href={href}
+      hrefLang={nextLocale}
+      aria-label={label}
+      onClick={(event) => {
+        const currentHash = window.location.hash;
+        if (currentHash && !event.currentTarget.hash) event.currentTarget.hash = currentHash;
+      }}
+    >
+      <Icon name="globe" size={17} />
+      <span lang="en">{nextLocale.toUpperCase()}</span>
+    </a>
+  );
+}
+
+function LanguageSlot({ locale, label }: { locale: Locale; label: string }) {
+  const nextLocale = locale === "ka" ? "en" : "ka";
+  const fallback = (
+    <a className={styles.language} href={`/${nextLocale}`} hrefLang={nextLocale} aria-label={label}>
+      <Icon name="globe" size={17} />
+      <span lang="en">{nextLocale.toUpperCase()}</span>
+    </a>
+  );
+  return (
+    <Suspense fallback={fallback}>
+      <LanguageSwitch locale={locale} label={label} />
+    </Suspense>
+  );
+}
+
 export function HeaderNavigation({ locale, nav, registerHref }: HeaderNavigationProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
-  const servicesRef = useRef<HTMLDivElement>(null);
-  const servicesTrigger = useRef<HTMLButtonElement>(null);
+  const servicesRef = useRef<HTMLDetailsElement>(null);
+  const servicesTrigger = useRef<HTMLElement>(null);
   const mobileTrigger = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname();
   const home = `/${locale}`;
-  const nextLocale = locale === "ka" ? "en" : "ka";
+  const homeCurrent = pathname === home || pathname === `${home}/`;
 
   function closeMenus() {
+    if (servicesRef.current) servicesRef.current.open = false;
     setServicesOpen(false);
     setMobileOpen(false);
   }
@@ -34,13 +89,15 @@ export function HeaderNavigation({ locale, nav, registerHref }: HeaderNavigation
     function closeOutside(event: PointerEvent) {
       if (!(event.target instanceof Node)) return;
       if (!headerRef.current?.contains(event.target)) closeMenus();
-      else if (!servicesRef.current?.contains(event.target)) setServicesOpen(false);
+      else if (servicesRef.current?.open && !servicesRef.current.contains(event.target)) {
+        servicesRef.current.open = false;
+      }
     }
 
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
-      if (servicesOpen) {
-        setServicesOpen(false);
+      if (servicesRef.current?.open) {
+        servicesRef.current.open = false;
         servicesTrigger.current?.focus();
       } else if (mobileOpen) {
         setMobileOpen(false);
@@ -60,24 +117,13 @@ export function HeaderNavigation({ locale, nav, registerHref }: HeaderNavigation
   }, [mobileOpen, servicesOpen]);
 
   const registration = (
-    <a className={styles.register} href={registerHref}>
+    <Link className={styles.register} href={registerHref} onClick={closeMenus}>
       <Icon name="user" size={16} />
       {nav.register}
-    </a>
+    </Link>
   );
 
-  const languageSwitch = (
-    <a
-      className={styles.language}
-      href={`/${nextLocale}`}
-      hrefLang={nextLocale}
-      aria-label={nav.switchLanguage}
-      onClick={(event) => { event.currentTarget.hash = window.location.hash; }}
-    >
-      <Icon name="globe" size={17} />
-      <span lang="en">{nextLocale.toUpperCase()}</span>
-    </a>
-  );
+  const languageSwitch = <LanguageSlot locale={locale} label={nav.switchLanguage} />;
 
   return (
     <header
@@ -103,6 +149,7 @@ export function HeaderNavigation({ locale, nav, registerHref }: HeaderNavigation
             aria-controls="site-navigation"
             aria-expanded={mobileOpen}
             onClick={() => {
+              if (servicesRef.current) servicesRef.current.open = false;
               setServicesOpen(false);
               setMobileOpen(!mobileOpen);
             }}
@@ -116,33 +163,24 @@ export function HeaderNavigation({ locale, nav, registerHref }: HeaderNavigation
           aria-label={nav.primary}
           id="site-navigation"
         >
-          <Link href={home} aria-current="page" className={styles.current} onClick={closeMenus}>
+          <Link href={home} aria-current={homeCurrent ? "page" : undefined} className={homeCurrent ? styles.current : undefined} onClick={closeMenus}>
             {nav.home}
           </Link>
-          <div
+          <details
             className={styles.services}
             ref={servicesRef}
-            onBlur={(event) => {
-              if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setServicesOpen(false);
-            }}
+            onToggle={(event) => setServicesOpen(event.currentTarget.open)}
           >
-            <button
-              type="button"
-              ref={servicesTrigger}
-              className={styles.servicesButton}
-              aria-expanded={servicesOpen}
-              aria-controls="site-services"
-              onClick={() => setServicesOpen(!servicesOpen)}
-            >
+            <summary ref={servicesTrigger} className={styles.servicesButton}>
               {nav.services}
               <span className={styles.chevron}><Icon name="chevron" size={14} /></span>
-            </button>
-            <div hidden={!servicesOpen} id="site-services" className={styles.dropdown}>
+            </summary>
+            <div id="site-services" className={styles.dropdown}>
               <a href={home + "#courses"} onClick={closeMenus}>{nav.courses}</a>
               <a href={home + "#books"} onClick={closeMenus}>{nav.books}</a>
               <a href={home + "#programmes"} onClick={closeMenus}>{nav.programmes}</a>
             </div>
-          </div>
+          </details>
           <a href={home + "#about"} onClick={closeMenus}>{nav.about}</a>
           <a href={home + "#contact"} onClick={closeMenus}>{nav.contact}</a>
           <div className={styles.mobileRegister}>{registration}</div>

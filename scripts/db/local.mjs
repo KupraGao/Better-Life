@@ -75,6 +75,8 @@ try {
     await client.query(`
       REVOKE ALL ON DATABASE betterlife FROM PUBLIC;
       GRANT CONNECT ON DATABASE betterlife TO betterlife_app, betterlife_migrator, supabase_auth_admin;
+      -- CREATE SCHEMA in migration 001 requires this even when the schema already exists.
+      GRANT CREATE ON DATABASE betterlife TO betterlife_migrator;
       CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION betterlife_migrator;
       CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_auth_admin;
       REVOKE ALL ON SCHEMA app, auth FROM PUBLIC, anon, authenticated;

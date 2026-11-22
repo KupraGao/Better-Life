@@ -4,9 +4,12 @@ import { getMessages, isLocale } from "@/i18n";
 import { db } from "@/lib/db";
 import { authorScope } from "@/modules/catalog/manage";
 import { requireUser } from "@/modules/identity/session";
+import { SubmitButton } from "@/components/submit-button";
 import { addCourse } from "./actions";
 import { Notice } from "./shared";
 import styles from "./manage.module.css";
+
+export const dynamic = "force-dynamic";
 
 export default async function Manage({ params, searchParams }: {
   params: Promise<{ locale: string }>;
@@ -30,12 +33,15 @@ export default async function Manage({ params, searchParams }: {
       <div className={styles.columns}>
         <section className={styles.panel}>
           <h2>{t.myCourses}</h2>
-          {courses.length ? <ul className={styles.courseList}>{courses.map((course) => (
-            <li key={course.id}><Link href={`/${locale}/manage/${course.id}`}>
-              <span><strong>{course.translations.find((x) => x.locale === locale)?.title ?? course.translations[0]?.title ?? course.slug}</strong>
-                <small>{course.slug}</small></span><span>{course.published ? t.published : t.draft} ↗</span>
-            </Link></li>
-          ))}</ul> : <p>{t.empty}</p>}
+          {courses.length ? <ul className={styles.courseList}>{courses.map((course) => {
+            const own = course.translations.find((row) => row.locale === locale);
+            const other = course.translations.find((row) => row.locale !== locale);
+            return <li key={course.id}><Link href={`/${locale}/manage/${course.id}`}>
+              <span><strong>{own?.title ?? other?.title ?? course.slug}</strong>
+                <small>{course.slug}{!own && other ? ` · ${t.missingLanguage}` : ""}</small></span>
+              <span>{course.published ? t.published : t.draft} ↗</span>
+            </Link></li>;
+          })}</ul> : <p>{t.empty}</p>}
         </section>
         {actor.role === "ADMIN" && <section className={styles.panel}>
           <h2>{t.createCourse}</h2>
@@ -43,7 +49,7 @@ export default async function Manage({ params, searchParams }: {
             <label>{t.nameKa}<input name="title" required maxLength={180} /></label>
             <label>{t.slug}<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxLength={100} dir="ltr" /></label>
             <label>{t.descriptionKa}<textarea name="body" maxLength={16000} rows={3} /></label>
-            <button type="submit">{t.create}</button>
+            <SubmitButton pending={t.pending}>{t.create}</SubmitButton>
           </form>
         </section>}
       </div>

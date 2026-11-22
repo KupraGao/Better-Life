@@ -16,24 +16,56 @@ export function getMessages(locale: Locale): Messages {
   return messages[locale];
 }
 
-/** Public destinations checked against the original academy navigation. */
+/** In-app destinations. Privacy, terms and refund have no pages here, so they return home. */
 export function getPublicLinks(locale: Locale) {
-  const home = locale === "ka" ? "https://betterlife.ge/" : "https://betterlife.ge/en/";
+  const home = `/${locale}`;
   return {
     home,
-    services: home + "#services",
-    courses: home + "courses/",
-    books: home + "product-category/e-book/",
-    about: home + "ჩემს-შესახებ/",
-    contact: home + "#contact",
-    register: home + "student-registration/",
-    dyslexia: home + "courses/დისლექსია/",
+    services: `${home}#programmes`,
+    courses: `${home}/courses`,
+    books: `${home}#books`,
+    about: `${home}#about`,
+    contact: `${home}#contact`,
+    register: `${home}/register`,
+    dyslexia: `${home}/courses`,
     email: "mailto:info.hibetterlife@gmail.com",
     phone: "tel:+995511777165",
-    privacy: home + "კონფიდენციალურობის-პოლი/",
-    terms: home + "სერვისის-გამოყენების-პირ/",
-    refund: home + "გადახდისა-და-თანხის-დაბრ/"
+    privacy: home,
+    terms: home,
+    refund: home
   };
+}
+
+/** Absolute origin for metadata. Empty or invalid APP_ORIGIN yields null and never throws. */
+export function publicOrigin(): URL | null {
+  const raw = process.env.APP_ORIGIN?.trim();
+  if (!raw) return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password) return null;
+  url.search = "";
+  url.hash = "";
+  return url;
+}
+
+export function localeFromPathname(pathname: string | null | undefined): Locale {
+  const segment = pathname?.split("/")[1];
+  return segment && isLocale(segment) ? segment : defaultLocale;
+}
+
+/** Replace only a real ka/en prefix. Any other path keeps its tail. */
+export function swapLocalePath(pathname: string, nextLocale: Locale) {
+  const path = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  const segments = path.split("/");
+  if (segments[1] === "ka" || segments[1] === "en") {
+    segments[1] = nextLocale;
+    return segments.join("/") || `/${nextLocale}`;
+  }
+  return `/${nextLocale}${path === "/" ? "" : path}`;
 }
 
 export const publicLinks = getPublicLinks(defaultLocale);

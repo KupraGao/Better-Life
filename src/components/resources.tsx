@@ -8,15 +8,18 @@ export function Resources({ locale }: { locale: Locale }) {
   const { resources: labels, courses, books } = getMessages(locale);
   const catalogue = [
     ...courses.items.map((course) => ({
+      id: `course-${course.title}`,
       kind: "courses" as const, label: labels.course, category: course.category,
       title: course.title, href: course.href, cover: "/brand/dyslexia.jpg", style: "course",
     })),
     ...books.items.map((book) => ({
+      id: `book-${book.slug}`,
       kind: "books" as const, label: labels.book, category: book.language, title: book.title,
       href: book.href, cover: `/brand/${book.slug}-${locale}.webp`, style: book.slug,
     })),
   ];
   const cards = catalogue.map((item) => ({
+    id: item.id,
     kind: item.kind,
     href: item.href,
     content: (

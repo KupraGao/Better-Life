@@ -37,7 +37,7 @@
       {
         "title": "დისლექსია",
         "category": "სპეციალური განათლება",
-        "href": "https://betterlife.ge/courses/დისლექსია/"
+        "href": "/ka/courses"
       }
     ]
   },
@@ -47,13 +47,13 @@
         "slug": "decisions",
         "title": "ცხოვრებას აფერადებს სწორი გადაწყვეტილებები",
         "language": "ქართული გამოცემა",
-        "href": "https://betterlife.ge/product/ცხოვრებას-აფერადებს-სწორ/"
+        "href": "/ka#books"
       },
       {
         "slug": "roles",
         "title": "როლი ადამიანზე და არა ადამიანი როლზე",
         "language": "ქართული გამოცემა",
-        "href": "https://betterlife.ge/product/ადამიანი-როლზე-და-არა-როლ/"
+        "href": "/ka#books"
       }
     ]
   },
@@ -65,17 +65,17 @@
       {
         "title": "მოზარდებისთვის",
         "description": "ძლიერი მხარეების აღმოჩენა და მომავალი პროფესიის არჩევა.",
-        "href": "https://betterlife.ge/მოზარდთათვის-2/"
+        "href": "/ka#programmes"
       },
       {
         "title": "ზრდასრულებისთვის",
         "description": "პირადი და პროფესიული მიზნების განსაზღვრა და დაბალანსება.",
-        "href": "https://betterlife.ge/შენთვის/"
+        "href": "/ka#programmes"
       },
       {
         "title": "კომპანიებისთვის",
         "description": "გუნდისა და თანამშრომლების განვითარებაზე ორიენტირებული პროგრამები.",
-        "href": "https://betterlife.ge/კომპანიებს/"
+        "href": "/ka#programmes"
       }
     ]
   },
@@ -173,6 +173,27 @@
     "newModuleHelp": "ახალი მოდული და გაკვეთილი თავდაპირველად ქართულად იქმნება.",
     "open": "კურსის ნახვა",
     "bodyKa": "გაკვეთილის ტექსტი ქართულად",
-    "descriptionKa": "აღწერა ქართულად"
+    "descriptionKa": "აღწერა ქართულად",
+    "pending": "ინახება…",
+    "missingLanguage": "ეს ენა ჯერ არ არის. ნაჩვენებია ხელმისაწვდომი თარგმანი.",
+    "previous": "წინა",
+    "nextPage": "შემდეგი",
+    "pageNav": "მომხმარებლების გვერდები"
+  },
+  "forms": {
+    "pending": "იგზავნება…"
+  },
+  "status": {
+    "loadingEyebrow": "იტვირთება",
+    "loadingTitle": "გვერდი იტვირთება",
+    "loadingBody": "გთხოვთ, მოითმინოთ.",
+    "errorEyebrow": "შეცდომა",
+    "errorTitle": "გვერდი ვერ ჩაიტვირთა",
+    "errorBody": "სცადეთ ხელახლა. ტექნიკური დეტალები აქ არ ჩანს.",
+    "retry": "თავიდან ცდა",
+    "notFoundEyebrow": "ვერ მოიძებნა",
+    "notFoundTitle": "ეს გვერდი არ არსებობს",
+    "notFoundBody": "ბმული შეიცვალა ან გვერდი წაიშალა.",
+    "home": "მთავარზე დაბრუნება"
   }
 }

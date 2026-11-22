@@ -1,8 +1,21 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { after, test } from "node:test";
+import { parseEnv } from "node:util";
 import { db } from "../../src/lib/db";
 import { completeLesson, enrollForFree, listCourses, myCourses, readCourse, readLesson } from "../../src/modules/learning/service";
+
+const fileEnv = parseEnv(readFileSync(".env", "utf8"));
+if (!process.env.DATABASE_URL && fileEnv.DATABASE_URL) process.env.DATABASE_URL = fileEnv.DATABASE_URL;
+const runtimeUrl = new URL(process.env.DATABASE_URL ?? "postgresql://invalid");
+const localUrl = new URL(parseEnv(readFileSync(".local/db/env", "utf8")).DATABASE_URL);
+assert.equal(runtimeUrl.hostname, "127.0.0.1");
+assert.equal(runtimeUrl.port, "55432");
+assert.equal(runtimeUrl.pathname, "/betterlife");
+assert.equal(localUrl.hostname, runtimeUrl.hostname);
+assert.equal(localUrl.port, runtimeUrl.port);
+assert.equal(localUrl.pathname, runtimeUrl.pathname);
 
 after(() => db.$disconnect());
 
@@ -24,10 +37,10 @@ test("published content, enrollment and progress are scoped to the course and le
     const invite = await tx.course.create({ data: {
       slug: `invited-test-${randomUUID()}`, published: true, translations: translations("Assigned")
     } });
-    const module = await tx.module.create({ data: { courseId: course.id, position: 1, titles: { ka: "ძირითადი", en: "Basics" } } });
+    const courseModule = await tx.module.create({ data: { courseId: course.id, position: 1, titles: { ka: "ძირითადი", en: "Basics" } } });
     async function addLesson(position: number, preview: boolean, published: boolean) {
       return tx.learningItem.create({ data: {
-        moduleId: module.id, position, preview, published,
+        moduleId: courseModule.id, position, preview, published,
         translations: { create: ["ka", "en"].map((locale) => ({
           locale, title: `Lesson ${position}`, body: { blocks: [{ type: "paragraph", text: `private body ${position}` }] }
         })) }
@@ -75,7 +88,7 @@ test("published content, enrollment and progress are scoped to the course and le
     assert.equal((await readCourse(tx, "ka", course.slug, other))?.completed, 0);
 
     // Another published lesson with only Georgian text keeps the English course out of the catalog.
-    await tx.learningItem.create({ data: { moduleId: module.id, position: 4, published: true,
+    await tx.learningItem.create({ data: { moduleId: courseModule.id, position: 4, published: true,
       translations: { create: { locale: "ka", title: "ახალი", body: { blocks: [] } } } } });
     assert.equal(await readCourse(tx, "en", course.slug, learner), null);
     assert.ok(!(await listCourses(tx, "en")).some((entry) => entry.slug === course.slug));

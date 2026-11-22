@@ -13,6 +13,10 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
   const text = learningLabels[locale];
   const user = await requireUser(locale);
   const courses = await myCourses(db, locale, user.id);
+  const contentLocale = locale === "ka" ? "en" : "ka";
+  const alternate = await myCourses(db, contentLocale, user.id);
+  const seen = new Set(courses.map((course) => course.id));
+  const missing = alternate.filter((course) => !seen.has(course.id));
   return (
     <main id="main" tabIndex={-1} className={`container ${styles.page}`}>
       <header className={styles.heading}>
@@ -23,7 +27,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
         </div>
       </header>
       <h2 className={styles.sectionTitle}>{text.myCourses}</h2>
-      {courses.length === 0 ? <div className={styles.panel}>
+      {courses.length === 0 && missing.length === 0 ? <div className={styles.panel}>
         <p>{text.noEnrollments}</p><Link className="text-link" href={`/${locale}/courses`}>{text.browse} →</Link>
       </div> : <ul className={styles.grid}>
         {courses.map((course) => <li className={styles.card} key={course.id}>
@@ -32,6 +36,11 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
           {course.nextLesson
             ? <Link className="text-link" href={lessonPath(locale, course.slug, course.nextLesson.id)}>{course.finished ? text.review : course.completed ? text.continue : text.start} →</Link>
             : <Link className="text-link" href={coursePath(locale, course.slug)}>{text.openCourse} →</Link>}
+        </li>)}
+        {missing.map((course) => <li className={styles.card} key={course.id}>
+          <p className={styles.meta} role="status">{text.missingLanguage}</p>
+          <h3><Link href={coursePath(locale, course.slug)}>{course.title}</Link></h3>
+          <Link className="text-link" href={coursePath(contentLocale, course.slug)}>{text.openAvailable} →</Link>
         </li>)}
       </ul>}
     </main>
