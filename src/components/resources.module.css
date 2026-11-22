@@ -1,0 +1,206 @@
+.section {
+  padding-block: clamp(56px, 6.2vw, 94px);
+  color: var(--ink);
+}
+
+.heading {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: clamp(24px, 2.6vw, 40px);
+}
+
+.anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  scroll-margin-top: 96px;
+  pointer-events: none;
+}
+
+.title {
+  margin: 12px 0 0;
+  font-size: clamp(1.9rem, 3.25vw, 3rem);
+  line-height: 1.28;
+  letter-spacing: -.045em;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+  padding: 7px 17px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.filter[aria-current="true"] {
+  color: white;
+  border-color: var(--ink);
+  background-color: var(--ink);
+}
+
+.filter:hover:not([aria-current]) {
+  color: var(--blue-strong);
+  background-color: var(--sky);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 30px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card:focus-visible,
+.filter:focus-visible {
+  outline: 3px solid var(--blue-strong);
+  outline-offset: 5px;
+}
+
+.stage {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1.52;
+  overflow: hidden;
+  border-radius: 12px;
+  place-items: center;
+}
+
+/* The course cover is square. Continue its edge colours across the wide frame. */
+.course {
+  background: linear-gradient(
+    #3fa9f5 20%, #40aaf4 40%, #47adf7 50%, #4eaff4 60%,
+    #5eb6f5 70%, #7bc1f2 80%, #92c9f0 85%, #abd7f2 90%, #cbe2f4 95%, #f3f3f3
+  );
+}
+
+.courseImage {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+
+.decisions {
+  background: linear-gradient(115deg, #ead9d3, #efe0dc 64%, #e5cfc8);
+}
+
+.roles {
+  background: linear-gradient(115deg, #d6ddd5, #e3e7df 64%, #cfd8cf);
+}
+
+.bookCover {
+  position: relative;
+  height: 71%;
+  aspect-ratio: .77;
+  transform: rotate(-5deg);
+  border-radius: 1px 2px 2px 1px;
+  box-shadow: 2px 1px 0 #f8f4ee, 4px 2px 0 #bcb8af, 8px 10px 16px #302c252c;
+}
+
+.roles .bookCover {
+  transform: rotate(5deg);
+}
+
+.bookCover img {
+  border-radius: inherit;
+  object-fit: fill;
+}
+
+.metadata {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 19px;
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.metadata > span:first-child {
+  color: var(--blue-strong);
+  font-weight: 600;
+}
+
+.dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 7px;
+}
+
+.cardHeading h3 {
+  margin: 0;
+  font-size: clamp(1.12rem, 1.65vw, 1.45rem);
+  font-weight: 650;
+  line-height: 1.48;
+  letter-spacing: -.027em;
+  text-wrap: pretty;
+}
+
+.arrow {
+  display: grid;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  place-items: center;
+  color: var(--blue-strong);
+}
+
+.card:is(:hover, :focus-visible) .arrow {
+  background-color: var(--ink);
+  border-color: var(--ink);
+  color: white;
+}
+
+@media (max-width: 860px) {
+  .heading { align-items: flex-start; flex-direction: column; gap: 18px; }
+  .cardHeading { gap: 6px; }
+  .arrow { width: 27px; height: 27px; }
+  .metadata { gap: 6px; }
+}
+
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; gap: 30px; }
+  .stage { aspect-ratio: 1.7; }
+  .metadata { margin-top: 13px; }
+  .cardHeading h3 { font-size: 1.25rem; }
+  .filter { min-height: 44px; }
+}

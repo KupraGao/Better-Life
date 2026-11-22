@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "title": "Hi, Better Life — Learning Academy",
+    "description": "Explore Hi, Better Life courses and e-books on learning, personal development and career choices."
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "programmes": "Programmes",
+    "courses": "Courses",
+    "books": "E-books",
+    "about": "About us",
+    "contact": "Contact",
+    "register": "Register",
+    "skip": "Skip to content",
+    "menu": "Open menu",
+    "closeMenu": "Close menu",
+    "primary": "Main navigation",
+    "footer": "Footer navigation",
+    "language": "Language",
+    "switchLanguage": "Switch to Georgian"
+  },
+  "hero": {
+    "eyebrow": "Learning academy",
+    "title": [
+      "Discover your",
+      "strengths"
+    ],
+    "intro": "Explore courses and e-books that help you understand how you learn, choose a career and make everyday decisions.",
+    "featured": "Featured course",
+    "portraitAlt": "Portrait from the Hi, Better Life academy",
+    "courses": "Explore courses",
+    "books": "Browse e-books"
+  },
+  "courses": {
+    "items": [
+      {
+        "title": "Dyslexia",
+        "category": "Special education",
+        "href": "https://betterlife.ge/en/courses/დისლექსია/"
+      }
+    ]
+  },
+  "books": {
+    "items": [
+      {
+        "slug": "decisions",
+        "title": "Life is colored by the right decisions",
+        "language": "English edition",
+        "href": "https://betterlife.ge/en/product/life-is-colored-by-the-right-decisions/"
+      },
+      {
+        "slug": "roles",
+        "title": "People over roles — not roles over people.",
+        "language": "English edition",
+        "href": "https://betterlife.ge/en/product/people-over-roles-not-roles-over-people/"
+      }
+    ]
+  },
+  "services": {
+    "eyebrow": "Services",
+    "title": "Academy programmes",
+    "intro": "Find a programme for teenagers, adults or your organisation.",
+    "items": [
+      {
+        "title": "For teenagers",
+        "description": "Discover your strengths and explore possible careers.",
+        "href": "https://betterlife.ge/en/მოზარდთათვის-2/"
+      },
+      {
+        "title": "For adults",
+        "description": "Set personal and professional goals and find a balance between them.",
+        "href": "https://betterlife.ge/en/შენთვის/"
+      },
+      {
+        "title": "For organisations",
+        "description": "Programmes that support the development of teams and individuals.",
+        "href": "https://betterlife.ge/en/კომპანიებს/"
+      }
+    ]
+  },
+  "about": {
+    "eyebrow": "About the academy",
+    "title": "Learning starts with your goals",
+    "intro": "Hi, Better Life helps teenagers and adults understand their strengths. Our programmes explore career choices, learning difficulties and personal development.",
+    "detail": "Meet the academy"
+  },
+  "contact": {
+    "eyebrow": "Contact",
+    "title": "Get in touch",
+    "intro": "Need help choosing a course or book? Send us an email or call the academy.",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone"
+  },
+  "footer": {
+    "tagline": "Courses and books for personal and professional growth.",
+    "navigation": "Navigation",
+    "contact": "Contact",
+    "rights": "All rights reserved",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "refund": "Payment and refund policy"
+  },
+  "resources": {
+    "eyebrow": "Library",
+    "title": "Learning resources",
+    "filterLabel": "Filter learning resources",
+    "all": "All",
+    "courses": "Courses",
+    "books": "E-books",
+    "course": "Course",
+    "book": "E-book"
+  },
+  "manage": {
+    "eyebrow": "Course management",
+    "title": "Course workspace",
+    "createCourse": "Create a course",
+    "myCourses": "Courses",
+    "empty": "You have no courses to manage yet.",
+    "name": "Title",
+    "nameKa": "Georgian title",
+    "slug": "URL slug (lowercase letters, numbers and hyphens)",
+    "description": "Description",
+    "body": "Lesson content",
+    "create": "Create",
+    "save": "Save changes",
+    "draft": "Draft",
+    "published": "Published",
+    "all": "All courses",
+    "settings": "Course details",
+    "translation": "Content language",
+    "modules": "Curriculum",
+    "newModule": "Add a module",
+    "newLesson": "Add a lesson",
+    "lessons": "Lessons",
+    "publish": "Publish course",
+    "unpublish": "Return to draft",
+    "publishLesson": "Publish lesson",
+    "preview": "Public preview lesson",
+    "free": "Allow free self-enrollment",
+    "membership": "Course access",
+    "instructors": "Assigned instructors",
+    "assign": "Assign instructor",
+    "enroll": "Enroll learner",
+    "user": "User ID",
+    "instructorChoice": "Instructor",
+    "choose": "Select",
+    "members": "Enrolled learners",
+    "video": "Video URL (YouTube or Vimeo)",
+    "format": "Start a new line for each paragraph. Use ## and a space for a heading, or a hyphen and a space for a list item.",
+    "up": "Move up",
+    "down": "Move down",
+    "files": "Images and attachments",
+    "file": "File (PNG, JPEG, PDF or UTF-8 text, up to 768 KiB)",
+    "upload": "Upload",
+    "saved": "Changes saved.",
+    "emptyModules": "This course has no modules yet.",
+    "moduleName": "Module title",
+    "newTranslation": "Add translation",
+    "settingsLink": "Edit",
+    "ka": "Georgian",
+    "en": "English",
+    "invalid": "Check the fields and selected user ID.",
+    "denied": "You do not have access to this resource.",
+    "stale": "The order has changed. Review the current order and try again.",
+    "publishError": "To publish, add a Georgian course title and publish a lesson. To translate a lesson, save its module title in that language first.",
+    "videoError": "Enter a valid HTTPS link to a YouTube or Vimeo video.",
+    "fileError": "The file could not be accepted. Check its format and size.",
+    "duplicate": "This URL slug is already used.",
+    "update": "Edit",
+    "editLesson": "Edit lesson",
+    "none": "No one yet",
+    "newModuleHelp": "New modules and lessons start with Georgian content.",
+    "open": "View course",
+    "bodyKa": "Georgian lesson content",
+    "descriptionKa": "Georgian description"
+  }
+}

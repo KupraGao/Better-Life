@@ -1,0 +1,45 @@
+{
+  "section": "Your account",
+  "login": "Sign in",
+  "register": "Create an account",
+  "forgot-password": "Reset your password",
+  "reset-password": "Choose a new password",
+  "intro": {
+    "login": "Sign in to continue learning.",
+    "register": "Create an account to join a free course.",
+    "forgot-password": "Enter the email address you used for your account to receive a reset link.",
+    "reset-password": "Choose a new password for your account."
+  },
+  "displayName": "Full name",
+  "email": "Email address",
+  "password": "Password",
+  "hint": "At least 10 characters",
+  "submit": {
+    "login": "Sign in",
+    "register": "Create account",
+    "forgot-password": "Send reset link",
+    "reset-password": "Save password"
+  },
+  "noAccount": "New to the academy?",
+  "existing": "Already have an account?",
+  "logout": "Sign out",
+  "dashboard": "My learning",
+  "manage": "Manage courses",
+  "roles": {
+    "STUDENT": "Student",
+    "INSTRUCTOR": "Instructor",
+    "ADMIN": "Administrator"
+  },
+  "messages": {
+    "invalid": "Check the fields and try again.",
+    "short": "Use at least 10 characters for your password.",
+    "unavailable": "The request could not be completed. Try again shortly.",
+    "sent": "If an account exists for this email, a reset link is on its way. Open it in this browser.",
+    "confirm": "Check your inbox and confirm your registration in this browser.",
+    "registerFailed": "We could not create the account. Check your details or try resetting your password.",
+    "loginFailed": "The email address or password is incorrect.",
+    "expired": "This link expired or was opened in another browser. Request a fresh recovery link.",
+    "changed": "Your password has been changed. Sign in with your new password.",
+    "passwordFailed": "We could not save the password. Try a new password or request a reset link."
+  }
+}

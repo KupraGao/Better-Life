@@ -1,0 +1,13 @@
+.region { padding: clamp(38px, 6vw, 88px) 20px; background: linear-gradient(120deg, var(--paper), white 52%, color-mix(in srgb,var(--sky) 17%,white)); min-height: 65vh; }
+.panel { max-width: 490px; margin: auto; padding: clamp(24px, 4vw, 44px); background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 42px #315b700c; }
+.panel h1 { margin: 16px 0 9px; font-size: clamp(1.7rem, 4vw, 2.5rem); overflow-wrap: anywhere; }
+.intro, .form small { color: var(--muted); }
+.form { display: grid; gap: 17px; margin-top: 24px; }
+.form label { display: grid; gap: 5px; font-weight: 600; }
+.form input { width: 100%; min-height: 46px; border-radius: 7px; padding: 8px 12px; border: 1px solid var(--line); color: var(--ink); background: white; }
+.form input:focus-visible { outline: 2px solid var(--blue-strong); }
+.form small { font-weight: 400; }
+.form button { cursor: pointer; }
+.links { display: grid; gap: 12px; margin-top: 21px; }
+.links a { color: var(--blue-strong); text-decoration: underline; text-underline-offset: 3px; }
+.feedback { margin-top: 16px; padding: 10px 14px; border-left: 3px solid var(--blue); background: color-mix(in srgb,var(--sky) 18%,white); }
