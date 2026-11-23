@@ -1,0 +1,66 @@
+---
+description: BetterLife LMS — mandatory project rules
+alwaysApply: true
+---
+
+# BetterLife — Core Rules
+
+## Project
+Work only within the existing BetterLife LMS codebase.
+Preserve its Next.js, React, TypeScript, Prisma, PostgreSQL and Supabase architecture.
+
+## Communication
+- Communicate and report in Georgian.
+- Keep reports concise, technical and evidence-based.
+- Do not claim tests passed unless they actually ran.
+
+## Code
+- Inspect relevant existing code before modifying it.
+- Make minimal, focused changes.
+- Reuse existing components, utilities and patterns.
+- Avoid unrelated refactoring and unnecessary dependencies.
+- Preserve Georgian and English localization.
+- Do not introduce duplicate implementations.
+- Preserve backward compatibility unless explicitly authorized.
+
+## Git
+- Never commit, push, merge, rebase or deploy without explicit user approval.
+- Never reset, clean, discard or overwrite existing uncommitted work.
+- Inspect git status before starting.
+- Do not create or switch branches/worktrees without approval.
+- Do not modify GitHub repository configuration.
+
+## Database
+- Never modify production data without explicit approval.
+- Never run destructive SQL.
+- Never create or execute Prisma migrations without approval.
+- Never modify Prisma schema without approval.
+- Run mutating tests only against a verified isolated test database.
+- Preserve existing enrollments, lessons, assets and student progress.
+
+## Security
+- Never expose credentials, secrets or environment variables.
+- Enforce authorization on the server.
+- Validate all untrusted input.
+- Preserve access controls and transactional integrity.
+
+## Workflow
+- Divide substantial tasks into verifiable stages.
+- Coordinate changes to shared files.
+- Do not let multiple agents edit the same files concurrently.
+- Run relevant tests after modifications.
+- Stop and ask before destructive, irreversible or high-risk operations.
+- Report modified files, test results, remaining risks and git status.
+
+## Course Editor
+- One course has three tabs: Basics, Plan and Access.
+- Each tab has exactly one independent Save operation.
+- Save must affect only the active tab.
+- Keep unsaved-change protection.
+- Do not silently publish existing hidden lessons.
+- Preserve student progress and existing asset identities.
+- Keep course publishing separate from tab saving.
+
+## Priority
+Follow these project rules for every BetterLife task.
+If a task conflicts with a safety restriction, stop and request clarification.
