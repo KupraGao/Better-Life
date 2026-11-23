@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { after, test } from "node:test";
 import { parseEnv } from "node:util";
 import { db } from "../../src/lib/db";
-import { completeLesson, enrollForFree, listCourses, myCourses, readCourse, readLesson } from "../../src/modules/learning/service";
+import { completeLesson, enrollForFree, listCourses, myCourses, progressPercent, readCourse, readLesson } from "../../src/modules/learning/service";
 
 const fileEnv = parseEnv(readFileSync(".env", "utf8"));
 if (!process.env.DATABASE_URL && fileEnv.DATABASE_URL) process.env.DATABASE_URL = fileEnv.DATABASE_URL;
@@ -20,6 +20,12 @@ assert.equal(localUrl.pathname, runtimeUrl.pathname);
 after(() => db.$disconnect());
 
 test("published content, enrollment and progress are scoped to the course and learner", async () => {
+  assert.equal(progressPercent(0, 0), 0);
+  assert.equal(progressPercent(0, 4), 0);
+  assert.equal(progressPercent(1, 3), 33);
+  assert.equal(progressPercent(199, 200), 99);
+  assert.equal(progressPercent(2, 2), 100);
+  assert.equal(progressPercent(-1, 2), 0);
   const rollback = new Error("discard test fixtures");
   await assert.rejects(db.$transaction(async (tx) => {
     const learner = randomUUID();
@@ -76,6 +82,11 @@ test("published content, enrollment and progress are scoped to the course and le
     assert.equal(await completeLesson(tx, "ka", course.slug, preview.id, learner), false);
     await tx.learningItem.update({ where: { id: preview.id }, data: { releaseAt: null } });
     assert.ok(await completeLesson(tx, "ka", course.slug, preview.id, learner));
+    const halfway = await readCourse(tx, "ka", course.slug, learner);
+    assert.equal(halfway?.completed, 1);
+    assert.equal(halfway?.total, 2);
+    assert.equal(halfway?.percent, 50);
+    assert.equal(halfway?.finished, false);
     const enrollment = { userId_courseId: { userId: learner, courseId: course.id } };
     assert.equal((await tx.enrollment.findUniqueOrThrow({ where: enrollment })).completedAt, null);
     assert.ok(await completeLesson(tx, "en", course.slug, privateLesson.id, learner));
@@ -84,7 +95,7 @@ test("published content, enrollment and progress are scoped to the course and le
     assert.ok(await completeLesson(tx, "ka", course.slug, privateLesson.id, learner));
     assert.equal((await tx.enrollment.findUniqueOrThrow({ where: enrollment })).completedAt?.getTime(), first.completedAt.getTime());
     assert.equal(await tx.progress.count({ where: { userId: learner } }), 2);
-    assert.deepEqual((await myCourses(tx, "ka", learner)).map((entry) => [entry.completed, entry.total, entry.finished]), [[2, 2, true]]);
+    assert.deepEqual((await myCourses(tx, "ka", learner)).map((entry) => [entry.completed, entry.total, entry.percent, entry.finished]), [[2, 2, 100, true]]);
     assert.equal((await readCourse(tx, "ka", course.slug, other))?.completed, 0);
 
     // Another published lesson with only Georgian text keeps the English course out of the catalog.
@@ -92,7 +103,11 @@ test("published content, enrollment and progress are scoped to the course and le
       translations: { create: { locale: "ka", title: "ახალი", body: { blocks: [] } } } } });
     assert.equal(await readCourse(tx, "en", course.slug, learner), null);
     assert.ok(!(await listCourses(tx, "en")).some((entry) => entry.slug === course.slug));
-    assert.equal((await readCourse(tx, "ka", course.slug, learner))?.finished, false);
+    const extended = await readCourse(tx, "ka", course.slug, learner);
+    assert.equal(extended?.completed, 2);
+    assert.equal(extended?.total, 3);
+    assert.equal(extended?.percent, 66);
+    assert.equal(extended?.finished, false);
     await tx.course.update({ where: { id: course.id }, data: { archivedAt: new Date() } });
     assert.equal(await readLesson(tx, "ka", course.slug, preview.id, learner), null);
     assert.equal(await enrollForFree(tx, "ka", course.slug, other), false);

@@ -8,7 +8,8 @@ const uuid = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
 function courseProjection(locale: Locale, userId: string | null) {
   const owned = { userId: { in: userId ? [userId] : [] } };
   return {
-    id: true, slug: true, freeEnrollment: true, coverImage: true,
+    id: true, slug: true, freeEnrollment: true, coverImage: true, level: true, priceRegular: true, priceSale: true,
+    categories: { select: { category: { select: { slug: true, translations: { select: { locale: true, title: true } } } } } },
     translations: { where: { locale }, select: { title: true, description: true } },
     enrollments: { where: owned, select: { enrolledAt: true, completedAt: true } },
     modules: {
@@ -31,6 +32,17 @@ function courseProjection(locale: Locale, userId: string | null) {
 
 type CourseRecord = Prisma.CourseGetPayload<{ select: ReturnType<typeof courseProjection> }>;
 
+function categoryNames(
+  rows: { category: { slug: string; translations: { locale: string; title: string }[] } }[],
+  locale: Locale,
+) {
+  return rows.flatMap((row) => {
+    const title = row.category.translations.find((item) => item.locale === locale)?.title
+      ?? row.category.translations.find((item) => item.locale !== locale)?.title;
+    return title ? [{ slug: row.category.slug, title }] : [];
+  });
+}
+
 function titled(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return "";
   return value;
@@ -47,6 +59,13 @@ function moduleTitle(titles: unknown, locale: Locale, position: number) {
   const other = readLocaleTitle(titles, locale === "ka" ? "en" : "ka");
   if (other) return { title: other, fallback: true };
   return { title: `${locale === "ka" ? "მოდული" : "Module"} ${position}`, fallback: false };
+}
+
+/** Whole percent that stays below 100 until every required lesson is complete. */
+export function progressPercent(completed: number, total: number) {
+  if (!Number.isInteger(completed) || !Number.isInteger(total) || total <= 0 || completed <= 0) return 0;
+  if (completed >= total) return 100;
+  return Math.floor((completed * 100) / total);
 }
 
 function describeCourse(course: CourseRecord, locale: Locale) {
@@ -71,26 +90,53 @@ function describeCourse(course: CourseRecord, locale: Locale) {
   const completed = lessons.filter((item) => item.completed).length;
   return {
     id: course.id, slug: course.slug, freeEnrollment: course.freeEnrollment, coverImage: course.coverImage,
+    level: course.level, priceRegular: course.priceRegular, priceSale: course.priceSale,
+    categories: categoryNames(course.categories, locale),
     ...course.translations[0], enrolled: !!membership, modules,
-    total: lessons.length, completed,
+    total: lessons.length, completed, percent: progressPercent(completed, lessons.length),
     finished: !!membership && lessons.length > 0 && completed === lessons.length,
     nextLesson: lessons.find((lesson) => lesson.accessible && !lesson.completed) ?? lessons.find((lesson) => lesson.accessible)
   };
 }
 
-export async function listCourses(store: Store, locale: Locale) {
+export async function listCourses(store: Store, locale: Locale, categorySlug?: string) {
   const courses = await store.course.findMany({
-    where: visibleCourseWhere(locale), orderBy: [{ createdAt: "desc" }, { slug: "asc" }],
+    where: {
+      ...visibleCourseWhere(locale), listed: true,
+      ...(categorySlug ? { categories: { some: { category: { slug: categorySlug } } } } : {}),
+    },
+    orderBy: [{ createdAt: "desc" }, { slug: "asc" }],
     select: {
-      slug: true, freeEnrollment: true, coverImage: true,
+      slug: true, freeEnrollment: true, coverImage: true, level: true, priceRegular: true, priceSale: true,
       translations: { where: { locale }, select: { title: true, description: true } },
+      categories: { select: { category: { select: { slug: true, translations: { select: { locale: true, title: true } } } } } },
       modules: { where: { archivedAt: null }, select: { _count: { select: { items: { where: activeLesson } } } } }
     }
   });
   return courses.map((course) => ({
     slug: course.slug, freeEnrollment: course.freeEnrollment, coverImage: course.coverImage,
+    level: course.level, priceRegular: course.priceRegular, priceSale: course.priceSale,
+    categories: categoryNames(course.categories, locale),
     ...course.translations[0], total: course.modules.reduce((count, mod) => count + mod._count.items, 0)
   }));
+}
+
+export async function listCatalogCategories(store: Store, locale: Locale) {
+  const rows = await store.category.findMany({
+    where: { courses: { some: { course: { ...visibleCourseWhere(locale), listed: true } } } },
+    orderBy: { slug: "asc" },
+    select: { slug: true, translations: { select: { locale: true, title: true } } },
+  });
+  return categoryNames(rows.map((row) => ({ category: row })), locale);
+}
+
+export async function canonicalSlug(store: Store, slug: string) {
+  const direct = await store.course.findUnique({ where: { slug }, select: { slug: true } });
+  if (direct) return direct.slug;
+  const alias = await store.courseSlugAlias.findUnique({
+    where: { slug }, select: { course: { select: { slug: true } } },
+  });
+  return alias?.course.slug ?? null;
 }
 
 export async function readCourse(store: Store, locale: Locale, slug: string, actorId: string | null) {

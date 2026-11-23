@@ -31,6 +31,14 @@ enum LessonAssetKind {
   @@schema("app")
 }
 
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+
+  @@schema("app")
+}
+
 model AppUser {
   id          String             @id @db.Uuid
   displayName String
@@ -50,12 +58,18 @@ model Course {
   freeEnrollment Boolean             @default(false)
   strictMode     Boolean             @default(false)
   coverImage     String?
+  level          CourseLevel?
+  listed         Boolean             @default(true)
+  priceRegular   Int?
+  priceSale      Int?
   archivedAt     DateTime?           @db.Timestamptz(3)
   createdAt      DateTime            @default(now()) @db.Timestamptz(3)
   translations   CourseTranslation[]
   modules        Module[]
   instructors    CourseInstructor[]
   enrollments    Enrollment[]
+  categories     CourseCategory[]
+  slugAliases    CourseSlugAlias[]
 
   @@schema("app")
 }
@@ -80,6 +94,47 @@ model CourseInstructor {
 
   @@id([courseId, userId])
   @@index([userId])
+  @@schema("app")
+}
+
+model CourseSlugAlias {
+  slug     String @id
+  courseId String @db.Uuid
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@schema("app")
+}
+
+model Category {
+  id           String                @id @default(uuid()) @db.Uuid
+  slug         String                @unique
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+  translations CategoryTranslation[]
+  courses      CourseCategory[]
+
+  @@schema("app")
+}
+
+model CategoryTranslation {
+  id         String   @id @default(uuid()) @db.Uuid
+  categoryId String   @db.Uuid
+  locale     String   @db.VarChar(2)
+  title      String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([categoryId, locale])
+  @@schema("app")
+}
+
+model CourseCategory {
+  courseId   String   @db.Uuid
+  categoryId String   @db.Uuid
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, categoryId])
+  @@index([categoryId])
   @@schema("app")
 }
 

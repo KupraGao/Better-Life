@@ -3,7 +3,7 @@
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { isLocale } from "@/i18n";
-import { createCourse, EditorError, isId, mutateCourse } from "@/modules/catalog/manage";
+import { createCourse, EditorError, isId, mutateCategory, mutateCourse } from "@/modules/catalog/manage";
 import { requireUser } from "@/modules/identity/session";
 
 function editorCode(error: unknown) {
@@ -26,6 +26,11 @@ export async function addCourse(locale: string, form: FormData) {
   redirect(path);
 }
 
+function editorTab(form: FormData) {
+  const tab = form.get("tab");
+  return tab === "plan" || tab === "access" || tab === "basics" ? tab : "basics";
+}
+
 export async function editCourse(locale: string, courseId: string, edit: string, intent: string, form: FormData) {
   if (!isLocale(locale) || !isLocale(edit) || !isId(courseId)) notFound();
   const actor = await requireUser(locale);
@@ -34,8 +39,24 @@ export async function editCourse(locale: string, courseId: string, edit: string,
   try {
     await mutateCourse(actor.id, courseId, intent, edit, form);
     revalidatePath(path);
+    revalidatePath(`/${locale}/courses`);
   } catch (error) {
     code = editorCode(error);
   }
-  redirect(`${path}?edit=${edit}&notice=${code}`);
+  redirect(`${path}?edit=${edit}&tab=${editorTab(form)}&notice=${code}`);
+}
+
+export async function saveCategory(locale: string, intent: string, form: FormData) {
+  if (!isLocale(locale)) notFound();
+  const actor = await requireUser(locale);
+  const path = `/${locale}/manage`;
+  let code = "saved";
+  try {
+    await mutateCategory(actor.id, intent, form);
+    revalidatePath(path);
+    revalidatePath(`/${locale}/courses`);
+  } catch (error) {
+    code = editorCode(error);
+  }
+  redirect(`${path}?notice=${code}`);
 }

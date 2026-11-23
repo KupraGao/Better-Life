@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SubmitButton } from "@/components/submit-button";
 import { db } from "@/lib/db";
 import { getMessages } from "@/i18n";
+import { formatGel } from "@/modules/catalog/basics";
 import { getCurrentUser } from "@/modules/identity/session";
 import { RichText } from "@/modules/catalog/lesson-content";
 import { enrollAction } from "@/modules/learning/actions";
 import { courseLocale, coursePath, learningLabels, lessonPath } from "@/modules/learning/labels";
 import { Progress } from "@/modules/learning/progress";
-import { readCourse } from "@/modules/learning/service";
+import { canonicalSlug, readCourse } from "@/modules/learning/service";
+import { Syllabus } from "@/modules/learning/syllabus";
 import styles from "@/modules/learning/learning.module.css";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +22,8 @@ export default async function CoursePage({ params }: { params: Promise<{ locale:
   const pending = getMessages(locale).forms.pending;
   const actor = await getCurrentUser();
   const actorId = actor?.id ?? null;
+  const canonical = await canonicalSlug(db, route.slug);
+  if (canonical && canonical !== route.slug) redirect(coursePath(locale, canonical));
   const requested = await readCourse(db, locale, route.slug, actorId);
   const contentLocale = locale === "ka" ? "en" : "ka";
   const course = requested ?? await readCourse(db, contentLocale, route.slug, actorId);
@@ -30,22 +34,24 @@ export default async function CoursePage({ params }: { params: Promise<{ locale:
     <main id="main" tabIndex={-1} className={`container ${styles.page}`}>
       <Link className={styles.back} href={`/${locale}/courses`}>← {text.catalog}</Link>
       <header className={styles.heading}>
+        {course.coverImage?.startsWith("https://") && (
+          // The address is chosen by an administrator and is not on an image allowlist.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={styles.cover} src={course.coverImage} alt="" />
+        )}
         {missingLanguage && <p className={styles.meta} role="status">{text.missingLanguage}</p>}
-        <p className={styles.meta}>{course.freeEnrollment ? text.free : text.assigned}</p>
+        {course.priceRegular ? <p className={styles.price}>
+          {course.priceSale ? <s>{formatGel(course.priceRegular)}</s> : null}{formatGel(course.priceSale ?? course.priceRegular)}
+        </p> : <p className={styles.meta}>{course.freeEnrollment ? text.free : text.assigned}</p>}
+        {course.categories.length > 0 && <p className={styles.meta}>{course.categories.map((item) => item.title).join(" · ")}</p>}
+        {course.level && <p className={styles.meta}>{text[course.level === "BEGINNER" ? "beginner" : course.level === "INTERMEDIATE" ? "intermediate" : "advanced"]}</p>}
         <h1>{course.title}</h1>
       </header>
       <div className={styles.columns}>
         <div>
           <div className={styles.description}><RichText value={course.description} /></div>
           <h2 className={styles.sectionTitle}>{text.syllabus}</h2>
-          {course.total === 0 && <p>{text.emptySyllabus}</p>}
-          {course.modules.map((courseModule) => <section className={styles.module} key={courseModule.id}>
-            <h3>{courseModule.title}{courseModule.fallback ? <small> {text.missingLanguage}</small> : null}</h3>
-            <ol>{courseModule.lessons.map((item) => <li key={item.id}>
-              {item.accessible ? <Link href={lessonPath(locale, course.slug, item.id)}>{item.title}</Link> : <span>{item.title}</span>}
-              <small>{item.completed ? text.done : !item.accessible ? text.unavailable : !course.enrolled && item.preview ? text.preview : ""}</small>
-            </li>)}</ol>
-          </section>)}
+          <Syllabus locale={locale} slug={course.slug} modules={course.modules} enrolled={course.enrolled} total={course.total} currentId={course.finished ? undefined : course.nextLesson?.id} />
         </div>
         <aside className={styles.panel}>
           {missingLanguage ? <>
@@ -60,6 +66,9 @@ export default async function CoursePage({ params }: { params: Promise<{ locale:
             {actor
               ? <form action={enrollAction.bind(null, locale, course.slug)}><SubmitButton className="button primary-button" pending={pending}>{text.enroll}</SubmitButton></form>
               : <Link className="button primary-button" href={`/${locale}/login?next=${encodeURIComponent(path)}`}>{text.loginToEnroll}</Link>}
+          </> : course.priceRegular ? <>
+            <p>{text.priced}</p>
+            <Link className="text-link" href={`/${locale}#contact`}>{text.contact}</Link>
           </> : <><p>{text.invitation}</p><Link className="text-link" href={`/${locale}#contact`}>{text.contact}</Link></>}
         </aside>
       </div>

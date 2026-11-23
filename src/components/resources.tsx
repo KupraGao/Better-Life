@@ -1,16 +1,27 @@
 import Image from "next/image";
 import { getMessages, type Locale } from "@/i18n";
+import { coursePath } from "@/modules/learning/labels";
 import { Icon } from "./icon";
 import { ResourceFilter } from "./resource-filter";
 import styles from "./resources.module.css";
 
-export function Resources({ locale }: { locale: Locale }) {
-  const { resources: labels, courses, books } = getMessages(locale);
+export type HomeCourse = {
+  slug: string;
+  title: string;
+  coverImage: string | null;
+  categories: { title: string }[];
+};
+
+export function Resources({ locale, courses }: { locale: Locale; courses: HomeCourse[] }) {
+  const { resources: labels, books } = getMessages(locale);
   const catalogue = [
-    ...courses.items.map((course) => ({
-      id: `course-${course.title}`,
-      kind: "courses" as const, label: labels.course, category: course.category,
-      title: course.title, href: course.href, cover: "/brand/dyslexia.jpg", style: "course",
+    ...courses.map((course) => ({
+      id: `course-${course.slug}`,
+      kind: "courses" as const, label: labels.course,
+      category: course.categories.map((item) => item.title).join(" · "),
+      title: course.title, href: coursePath(locale, course.slug),
+      cover: course.coverImage?.startsWith("https://") ? course.coverImage : "/brand/dyslexia.jpg",
+      style: "course",
     })),
     ...books.items.map((book) => ({
       id: `book-${book.slug}`,
@@ -26,10 +37,16 @@ export function Resources({ locale }: { locale: Locale }) {
       <a href={item.href} className={styles.card}>
         <div className={`${styles.stage} ${styles[item.style]}`}>
           {item.kind === "courses" ? (
-            <Image
-              src={item.cover} alt="" width={612} height={612}
-              sizes="(max-width: 700px) 70vw, 22vw" className={styles.courseImage}
-            />
+            item.cover.startsWith("https://") ? (
+              // The address is chosen by an administrator and is not on an image allowlist.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.cover} alt="" width={612} height={612} className={styles.courseImage} />
+            ) : (
+              <Image
+                src={item.cover} alt="" width={612} height={612}
+                sizes="(max-width: 700px) 70vw, 22vw" className={styles.courseImage}
+              />
+            )
           ) : (
             <div className={styles.bookCover}>
               <Image src={item.cover} alt="" fill sizes="(max-width: 700px) 35vw, 12vw" />
@@ -38,8 +55,10 @@ export function Resources({ locale }: { locale: Locale }) {
         </div>
         <div className={styles.metadata}>
           <span>{item.label}</span>
-          <span className={styles.dot} aria-hidden="true" />
-          <span>{item.category}</span>
+          {item.category ? <>
+            <span className={styles.dot} aria-hidden="true" />
+            <span>{item.category}</span>
+          </> : null}
         </div>
         <div className={styles.cardHeading}>
           <h3>{item.title}</h3>

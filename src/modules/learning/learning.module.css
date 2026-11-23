@@ -27,9 +27,14 @@
 .module { margin-bottom: 20px; border-top: 1px solid var(--line); }
 .module h3 { padding: 14px 0 8px; }
 .module ol { padding-left: 28px; margin: 0; }
-.module li { padding: 5px 0; }
+.module li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 14px; margin-bottom: 4px; padding: 8px 10px; border-radius: 8px; }
 .module a, .files a { color: var(--blue-strong); }
-.module small { display: inline-block; margin-inline-start: 14px; color: var(--muted); }
+.module small { color: var(--muted); }
+.done { background: color-mix(in srgb, var(--paper) 72%, white); }
+.done small { color: var(--blue-strong); font-weight: 650; }
+.current { background: color-mix(in srgb, var(--sky) 24%, white); }
+.current small { color: var(--blue-strong); font-weight: 650; }
+.locked, .locked span { color: var(--muted); }
 .progress { width: 100%; max-width: 520px; }
 .card .progress { margin-top: 18px; }
 .progress > div { display: flex; justify-content: space-between; gap: 14px; font-size: .94rem; }
@@ -41,6 +46,12 @@
 .files { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
 .files h2 { font-size: 1.3rem; }
 .complete { color: var(--blue-strong); font-weight: 650; }
+.cover { width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; margin-bottom: 16px; }
+.price { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin: 0 0 10px; font-weight: 700; }
+.price s { color: var(--muted); font-weight: 500; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; padding: 0; list-style: none; }
+.filters a { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+.filters a[aria-current] { background: var(--ink); color: white; }
 @media (max-width: 720px) {
   .columns { grid-template-columns: 1fr; }
 }

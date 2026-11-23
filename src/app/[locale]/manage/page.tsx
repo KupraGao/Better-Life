@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { authorScope } from "@/modules/catalog/manage";
 import { requireUser } from "@/modules/identity/session";
 import { SubmitButton } from "@/components/submit-button";
-import { addCourse } from "./actions";
+import { addCourse, saveCategory } from "./actions";
 import { Notice } from "./shared";
 import styles from "./manage.module.css";
 
@@ -21,6 +21,10 @@ export default async function Manage({ params, searchParams }: {
   if (actor.role === "STUDENT") notFound();
   const { manage: t } = getMessages(locale);
   const { notice } = await searchParams;
+  const categories = actor.role === "ADMIN" ? await db.category.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, slug: true, translations: { select: { locale: true, title: true } }, _count: { select: { courses: true } } },
+  }) : [];
   const courses = await db.course.findMany({
     where: authorScope(actor), orderBy: { createdAt: "desc" },
     select: { id: true, slug: true, published: true, translations: { select: { title: true, locale: true } } },
@@ -53,6 +57,34 @@ export default async function Manage({ params, searchParams }: {
           </form>
         </section>}
       </div>
+      {actor.role === "ADMIN" && <section className={styles.panel}>
+        <h2>{t.categories}</h2>
+        <form action={saveCategory.bind(null, locale, "category-new")}>
+          <label>{t.categoryTitle}<input name="title" required maxLength={120} /></label>
+          <label>{t.categoryTitleEn}<input name="titleEn" maxLength={120} /></label>
+          <label>{t.slug}<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxLength={100} dir="ltr" /></label>
+          <SubmitButton pending={t.pending}>{t.newCategory}</SubmitButton>
+        </form>
+        {categories.map((category) => {
+          const georgian = category.translations.find((row) => row.locale === "ka")?.title ?? "";
+          const english = category.translations.find((row) => row.locale === "en")?.title ?? "";
+          return <article key={category.id}>
+            <h3>{georgian || category.slug}</h3>
+            <form action={saveCategory.bind(null, locale, "category-edit")}>
+              <input type="hidden" name="target" value={category.id} />
+              <label>{t.categoryTitle}<input name="title" required maxLength={120} defaultValue={georgian} /></label>
+              <label>{t.categoryTitleEn}<input name="titleEn" maxLength={120} defaultValue={english} /></label>
+              <label>{t.slug}<input name="slug" required dir="ltr" maxLength={100} defaultValue={category.slug} pattern="[a-z0-9]+(-[a-z0-9]+)*" /></label>
+              <SubmitButton pending={t.pending}>{t.editCategory}</SubmitButton>
+            </form>
+            {category._count.courses === 0 ? <form action={saveCategory.bind(null, locale, "category-delete")}>
+              <input type="hidden" name="target" value={category.id} />
+              <small>{t.categoryUnused}</small>
+              <SubmitButton pending={t.pending}>{t.deleteCategory}</SubmitButton>
+            </form> : <small>{t.categoryUnused}</small>}
+          </article>;
+        })}
+      </section>}
     </main>
   );
 }

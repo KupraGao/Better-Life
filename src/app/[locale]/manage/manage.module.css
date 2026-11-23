@@ -8,8 +8,10 @@
 .stack { display: grid; gap: 22px; }
 .panel { min-width: 0; border: 1px solid var(--line); border-radius: 16px; padding: clamp(16px, 2.5vw, 30px); }
 .workspace form { display: grid; justify-items: start; gap: 12px; margin: 16px 0; }
+.workspace fieldset { width: 100%; margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.workspace legend { font-weight: 650; padding-inline: 4px; }
 .workspace label { display: grid; gap: 5px; width: 100%; font-weight: 600; }
-.workspace input:not([type=checkbox]), .workspace select, .workspace textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 400 1rem/1.4 var(--font-body); color: var(--ink); background: white; }
+.workspace input:not([type=checkbox]):not([type=radio]), .workspace select, .workspace textarea { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 400 1rem/1.4 var(--font-body); color: var(--ink); background: white; }
 .workspace textarea { resize: vertical; }
 .workspace small { display: block; color: var(--muted); font: .83rem/1.45 var(--font-body); }
 .workspace button { cursor: pointer; border: 1px solid var(--blue-strong); border-radius: 7px; padding: 8px 15px; background: var(--blue-strong); color: white; }
@@ -19,11 +21,14 @@
 .courseList { list-style: none; padding: 0; margin: 0; }
 .courseList a { display: flex; justify-content: space-between; align-items: center; gap: 14px; border-top: 1px solid var(--line); padding: 14px 2px; }
 .courseList a > span:last-child, .state { color: var(--blue-strong); font-size: .88rem; }
-.toolbar, .languages, .moves { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.toolbar, .languages, .moves, .tabs { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .toolbar { margin-bottom: 24px; }
 .toolbar form, .moves form { margin: 0; }
 .state, .languages a { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; }
-.languages a[aria-current] { background: var(--ink); color: white; }
+.languages a[aria-current], .tabs a[aria-current] { background: var(--ink); color: white; }
+.tabs a { border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; }
+.choice { display: grid; gap: 8px; margin: 4px 0 8px; }
+.coverPreview { width: min(100%, 420px); max-height: 220px; object-fit: cover; border-radius: 10px; }
 .notice { border-inline-start: 3px solid var(--blue); background: var(--paper); margin: 18px 0; padding: 10px 14px; }
 .notice[role=alert] { border-color: var(--rose); }
 .module { padding: 16px 0; border-top: 1px solid var(--line); }

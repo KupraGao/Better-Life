@@ -1,12 +1,13 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { Locale } from "@/i18n";
 import { db } from "@/lib/db";
+import { normalizeSlug, readCover, readGel, readLevel } from "./basics";
 import { parseText, parseVideo } from "./content";
 import { detectAsset, maxAssetSize } from "../media/file-type";
 
 type Transaction = Prisma.TransactionClient;
 type Actor = { id: string; role: string };
-export type ErrorCode = "invalid" | "denied" | "stale" | "publish" | "video" | "file" | "duplicate";
+export type ErrorCode = "invalid" | "denied" | "stale" | "publish" | "video" | "file" | "duplicate" | "price" | "cover" | "category";
 export class EditorError extends Error {
   constructor(readonly code: ErrorCode) { super(code); }
 }
@@ -28,9 +29,21 @@ function identifier(form: FormData, key: string) {
 }
 
 function slugValue(form: FormData) {
-  const slug = value(form, "slug", 100);
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new EditorError("invalid");
+  const slug = normalizeSlug(value(form, "slug", 120));
+  if (!slug) throw new EditorError("invalid");
   return slug;
+}
+
+function categoryIds(form: FormData) {
+  const ids = form.getAll("category").map((item) => {
+    if (typeof item !== "string" || !isId(item)) throw new EditorError("invalid");
+    return item;
+  });
+  return [...new Set(ids)];
+}
+
+function uniqueConflict(error: unknown) {
+  return !!error && typeof error === "object" && "code" in error && error.code === "P2002";
 }
 
 export function authorScope(actor: Actor): Prisma.CourseWhereInput {
@@ -99,6 +112,61 @@ async function reorder(tx: Transaction, courseId: string, form: FormData, isModu
   await update(current.id, adjacent.position);
 }
 
+async function renameSlug(tx: Transaction, courseId: string, next: string) {
+  const current = await tx.course.findUnique({ where: { id: courseId }, select: { slug: true } });
+  if (!current) throw new EditorError("denied");
+  if (current.slug === next) return;
+  const [foreignCourse] = await tx.$queryRaw<{ id: string }[]>`
+    SELECT id FROM app."Course" WHERE slug = ${next} AND id <> ${courseId}::uuid FOR UPDATE`;
+  if (foreignCourse) throw new EditorError("duplicate");
+  const [foreignAlias] = await tx.$queryRaw<{ courseId: string }[]>`
+    SELECT "courseId" FROM app."CourseSlugAlias" WHERE slug = ${next} AND "courseId" <> ${courseId}::uuid FOR UPDATE`;
+  if (foreignAlias) throw new EditorError("duplicate");
+  await tx.courseSlugAlias.deleteMany({ where: { slug: next, courseId } });
+  try {
+    await tx.course.update({ where: { id: courseId }, data: { slug: next } });
+    await tx.courseSlugAlias.create({ data: { slug: current.slug, courseId } });
+  } catch (error) {
+    if (uniqueConflict(error)) throw new EditorError("duplicate");
+    throw error;
+  }
+}
+
+async function saveBasics(tx: Transaction, courseId: string, form: FormData) {
+  const cover = readCover(value(form, "cover", 2000, false));
+  if (cover === undefined) throw new EditorError("cover");
+  const level = readLevel(value(form, "level", 20, false));
+  if (level === undefined) throw new EditorError("invalid");
+  const ids = categoryIds(form);
+  if (ids.length && ids.length !== await tx.category.count({ where: { id: { in: ids } } })) throw new EditorError("invalid");
+  await renameSlug(tx, courseId, slugValue(form));
+  await tx.course.update({ where: { id: courseId }, data: { coverImage: cover, level } });
+  await tx.courseCategory.deleteMany({ where: { courseId, ...(ids.length ? { categoryId: { notIn: ids } } : {}) } });
+  if (ids.length) await tx.courseCategory.createMany({
+    data: ids.map((categoryId) => ({ courseId, categoryId })), skipDuplicates: true,
+  });
+}
+
+async function saveCommerce(tx: Transaction, courseId: string, form: FormData) {
+  const mode = form.get("mode");
+  if (typeof mode !== "string") {
+    await tx.course.update({ where: { id: courseId }, data: { freeEnrollment: form.get("free") === "on" } });
+    return;
+  }
+  if (mode !== "free" && mode !== "paid" && mode !== "closed") throw new EditorError("invalid");
+  const listed = form.get("listed") === "on";
+  if (mode !== "paid") {
+    await tx.course.update({ where: { id: courseId }, data: { freeEnrollment: mode === "free", listed, priceRegular: null, priceSale: null } });
+    return;
+  }
+  const priceRegular = readGel(value(form, "priceRegular", 16, false));
+  const priceSale = readGel(value(form, "priceSale", 16, false));
+  if (priceRegular === undefined || priceSale === undefined || priceRegular === null || (priceSale !== null && priceSale >= priceRegular)) {
+    throw new EditorError("price");
+  }
+  await tx.course.update({ where: { id: courseId }, data: { freeEnrollment: false, listed, priceRegular, priceSale } });
+}
+
 async function publishCourse(tx: Transaction, courseId: string, published: boolean) {
   if (published) {
     const ready = await tx.course.findFirst({ where: { id: courseId, translations: { some: { locale: "ka" } },
@@ -127,13 +195,16 @@ export async function mutateCourse(actorId: string, courseId: string, intent: st
           update: translation, create: { courseId, locale, ...translation } });
         break;
       }
+      case "basics":
+        await saveBasics(tx, courseId, form);
+        break;
       case "publish":
       case "unpublish":
         await publishCourse(tx, courseId, intent === "publish");
         break;
       case "access":
         if (actor.role !== "ADMIN") throw new EditorError("denied");
-        await tx.course.update({ where: { id: courseId }, data: { freeEnrollment: form.get("free") === "on" } });
+        await saveCommerce(tx, courseId, form);
         break;
       case "module-new": {
         const last = await tx.module.aggregate({ where: { courseId }, _max: { position: true } });
@@ -198,4 +269,50 @@ export async function mutateCourse(actorId: string, courseId: string, intent: st
         throw new EditorError("invalid");
     }
   });
+}
+
+export async function mutateCategory(actorId: string, intent: string, form: FormData) {
+  try {
+    await db.$transaction(async (tx) => {
+      const actor = await lockActor(tx, actorId);
+      if (actor.role !== "ADMIN") throw new EditorError("denied");
+      if (intent === "category-new") {
+        const title = value(form, "title", 120);
+        const english = value(form, "titleEn", 120, false);
+        await tx.category.create({ data: {
+          slug: slugValue(form),
+          translations: { create: [{ locale: "ka", title }, ...(english ? [{ locale: "en", title: english }] : [])] },
+        } });
+        return;
+      }
+      const id = identifier(form, "target");
+      if (intent === "category-edit") {
+        const title = value(form, "title", 120);
+        const english = value(form, "titleEn", 120, false);
+        if (!await tx.category.findUnique({ where: { id }, select: { id: true } })) throw new EditorError("invalid");
+        await tx.category.update({ where: { id }, data: { slug: slugValue(form) } });
+        await tx.categoryTranslation.upsert({
+          where: { categoryId_locale: { categoryId: id, locale: "ka" } },
+          update: { title }, create: { categoryId: id, locale: "ka", title },
+        });
+        if (english) await tx.categoryTranslation.upsert({
+          where: { categoryId_locale: { categoryId: id, locale: "en" } },
+          update: { title: english }, create: { categoryId: id, locale: "en", title: english },
+        });
+        else await tx.categoryTranslation.deleteMany({ where: { categoryId: id, locale: "en" } });
+        return;
+      }
+      if (intent === "category-delete") {
+        if (!await tx.category.findUnique({ where: { id }, select: { id: true } })) throw new EditorError("invalid");
+        if (await tx.courseCategory.count({ where: { categoryId: id } })) throw new EditorError("category");
+        await tx.categoryTranslation.deleteMany({ where: { categoryId: id } });
+        await tx.category.delete({ where: { id } });
+        return;
+      }
+      throw new EditorError("invalid");
+    });
+  } catch (error) {
+    if (uniqueConflict(error)) throw new EditorError("duplicate");
+    throw error;
+  }
 }

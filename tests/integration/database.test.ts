@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { parseEnv } from "node:util";
@@ -71,6 +72,33 @@ test("runtime is restricted to application data and can create only student prof
     await assert.rejects(conn.query('INSERT INTO app."AppUser"(id,"displayName",role) VALUES ($1,$2,$3)', [randomUUID(), "Test admin", "ADMIN"]), { code: "42501" });
     await conn.query("ROLLBACK");
   } finally {
+    await conn.end();
+  }
+});
+
+test("operator role grant updates only an existing local profile", async () => {
+  const source = await readFile("scripts/db/role.mjs", "utf8");
+  assert.equal(source.includes("auth.users"), false);
+  assert.equal(source.includes("user_metadata"), false);
+  assert.equal(source.includes("app_metadata"), false);
+  const conn = await localConnection("DB_ADMIN_URL");
+  const id = randomUUID();
+  const bystander = randomUUID();
+  const missingId = randomUUID();
+  try {
+    await conn.query(`INSERT INTO app."AppUser"(id, "displayName") VALUES ($1, 'Role script'), ($2, 'Role bystander')`, [id, bystander]);
+    const granted = spawnSync(process.execPath, ["scripts/db/role.mjs", id, "ADMIN"], { encoding: "utf8" });
+    assert.equal(granted.status, 0, `role script exited ${granted.status}`);
+    const row = await conn.query(`SELECT role::text AS role FROM app."AppUser" WHERE id = $1::uuid`, [id]);
+    assert.equal(row.rows[0].role, "ADMIN");
+    const other = await conn.query(`SELECT role::text AS role FROM app."AppUser" WHERE id = $1::uuid`, [bystander]);
+    assert.equal(other.rows[0].role, "STUDENT");
+    const missing = spawnSync(process.execPath, ["scripts/db/role.mjs", missingId, "ADMIN"], { encoding: "utf8" });
+    assert.notEqual(missing.status, 0);
+    const ghost = await conn.query(`SELECT 1 FROM app."AppUser" WHERE id = $1::uuid`, [missingId]);
+    assert.equal(ghost.rowCount, 0);
+  } finally {
+    await conn.query(`DELETE FROM app."AppUser" WHERE id IN ($1::uuid, $2::uuid)`, [id, bystander]);
     await conn.end();
   }
 });

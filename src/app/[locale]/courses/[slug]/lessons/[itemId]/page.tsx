@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SubmitButton } from "@/components/submit-button";
 import { db } from "@/lib/db";
 import { getMessages } from "@/i18n";
@@ -8,7 +8,8 @@ import { RichText, LessonVideo } from "@/modules/catalog/lesson-content";
 import { completeAction } from "@/modules/learning/actions";
 import { courseLocale, coursePath, learningLabels, lessonPath } from "@/modules/learning/labels";
 import { Progress } from "@/modules/learning/progress";
-import { readLesson } from "@/modules/learning/service";
+import { canonicalSlug, readLesson } from "@/modules/learning/service";
+import { Syllabus } from "@/modules/learning/syllabus";
 import styles from "@/modules/learning/learning.module.css";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ export default async function Lesson({ params }: { params: Promise<{ locale: str
   const pending = getMessages(locale).forms.pending;
   const user = await getCurrentUser();
   const actorId = user?.id ?? null;
+  const canonical = await canonicalSlug(db, route.slug);
+  if (canonical && canonical !== route.slug) redirect(lessonPath(locale, canonical, route.itemId));
   const contentLocale = locale === "ka" ? "en" : "ka";
   const requested = await db.$transaction(
     (tx) => readLesson(tx, locale, route.slug, route.itemId, actorId), { isolationLevel: "RepeatableRead" }
@@ -54,6 +57,8 @@ export default async function Lesson({ params }: { params: Promise<{ locale: str
           {files.length > 0 && <section className={styles.files}><h2>{text.files}</h2><ul>
             {files.map((file) => <li key={file.id}><a href={mediaHref(file.id)} download>{file.name}</a></li>)}
           </ul></section>}
+          <h2 className={styles.sectionTitle}>{text.syllabus}</h2>
+          <Syllabus locale={locale} slug={course.slug} modules={course.modules} enrolled={course.enrolled} total={course.total} currentId={current.completed ? undefined : current.id} />
         </article>
         <aside className={styles.panel}>
           {missingLanguage ? <>

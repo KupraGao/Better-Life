@@ -1,14 +1,21 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { Resources } from "@/components/resources";
+import { Resources, type HomeCourse } from "@/components/resources";
 import { getMessages, getPublicLinks, isLocale } from "@/i18n";
+import { db } from "@/lib/db";
+import { listCourses } from "@/modules/learning/service";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const { hero, courses, about, services } = getMessages(locale);
   const course = courses.items[0];
+  const catalog: HomeCourse[] = (await listCourses(db, locale)).flatMap((item) => item.title ? [{
+    slug: item.slug, title: item.title, coverImage: item.coverImage, categories: item.categories,
+  }] : []);
 
   return (
     <main id="main" tabIndex={-1}>
@@ -36,7 +43,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </section>
 
-      <Resources locale={locale} />
+      <Resources locale={locale} courses={catalog} />
 
       <section id="about" className="about" aria-labelledby="about-title">
         <div className="container about-layout">
