@@ -1,0 +1,19 @@
+html {
+  scroll-behavior: smooth;
+}
+
+#contact {
+  scroll-margin-top: 5.75rem;
+}
+
+@media (max-width: 1079.98px) {
+  #contact {
+    scroll-margin-top: 5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

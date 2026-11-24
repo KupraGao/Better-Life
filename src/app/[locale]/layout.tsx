@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { getMessages, isLocale, locales, publicOrigin } from "@/i18n";
 import "../globals.css";
+import "../scroll.css";
 
 type RouteProps = { params: Promise<{ locale: string }> };
 

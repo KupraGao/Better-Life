@@ -5,7 +5,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 function createClient() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("Set DATABASE_URL before starting the application.");
-  const adapter = new PrismaPg({ connectionString, max: 6 }, { schema: "app" });
+  const adapter = new PrismaPg({ connectionString, max: 6, pipeline: true }, { schema: "app" });
   return new PrismaClient({ adapter });
 }
 

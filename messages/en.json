@@ -12,6 +12,7 @@
     "about": "About us",
     "contact": "Contact",
     "register": "Register",
+    "account": "Account",
     "skip": "Skip to content",
     "menu": "Open menu",
     "closeMenu": "Close menu",
@@ -47,13 +48,13 @@
         "slug": "decisions",
         "title": "Life is colored by the right decisions",
         "language": "English edition",
-        "href": "/en#books"
+        "href": "/en/books#decisions-en"
       },
       {
         "slug": "roles",
         "title": "People over roles — not roles over people.",
         "language": "English edition",
-        "href": "/en#books"
+        "href": "/en/books#roles-en"
       }
     ]
   },
@@ -65,17 +66,17 @@
       {
         "title": "For teenagers",
         "description": "Discover your strengths and explore possible careers.",
-        "href": "/en#programmes"
+        "href": "/en/teenagers"
       },
       {
         "title": "For adults",
         "description": "Set personal and professional goals and find a balance between them.",
-        "href": "/en#programmes"
+        "href": "/en/adults"
       },
       {
         "title": "For organisations",
         "description": "Programmes that support the development of teams and individuals.",
-        "href": "/en#programmes"
+        "href": "/en/companies"
       }
     ]
   },
@@ -183,7 +184,24 @@
     "files": "Images and attachments",
     "file": "File (PNG, JPEG, PDF or UTF-8 text, up to 768 KiB)",
     "upload": "Upload",
+    "replace": "Replace",
+    "remove": "Delete",
+    "replaceFile": "New file",
+    "viewFile": "View",
+    "downloadFile": "Download",
+    "fileType": "Type",
+    "fileSize": "Size",
+    "deleteConfirm": "Delete \"{name}\"? This cannot be undone.",
     "saved": "Changes saved.",
+    "unsaved": "Unsaved changes",
+    "savedNow": "Saved",
+    "leaveTitle": "Unsaved changes",
+    "leaveBody": "Changes on this tab have not been saved yet.",
+    "saveAndLeave": "Save and continue",
+    "discardAndLeave": "Continue without saving",
+    "stay": "Stay",
+    "removed": "The lesson file was deleted.",
+    "replaced": "The lesson file was replaced.",
     "emptyModules": "This course has no modules yet.",
     "moduleName": "Module title",
     "newTranslation": "Add translation",
@@ -195,7 +213,7 @@
     "stale": "The order has changed. Review the current order and try again.",
     "publishError": "To publish, add a Georgian course title and publish a lesson. To translate a lesson, save its module title in that language first.",
     "videoError": "Enter a valid HTTPS link to a YouTube or Vimeo video.",
-    "fileError": "The file could not be accepted. Check its format and size.",
+    "fileError": "The file could not be accepted. Use PNG, JPEG, PDF, or UTF-8 text up to 768 KiB.",
     "duplicate": "This URL slug is already used.",
     "update": "Edit",
     "editLesson": "Edit lesson",
@@ -208,7 +226,18 @@
     "missingLanguage": "This language is not ready yet. Showing the available translation.",
     "previous": "Previous",
     "nextPage": "Next",
-    "pageNav": "User pages"
+    "pageNav": "User pages",
+    "lessonShown": "Lesson is visible",
+    "lessonHidden": "Lesson is hidden",
+    "pendingRemoval": "Removal is pending. Saving will archive this.",
+    "undoRemoval": "Undo removal",
+    "fileSizeError": "The file exceeds 768 KiB.",
+    "view": "View",
+    "previewBanner": "This is the saved version. Changes are not saved here.",
+    "previewHidden": "Hidden",
+    "previewBack": "Back to the editor",
+    "previewStaleTitle": "Unsaved changes",
+    "previewStaleBody": "Preview shows the last saved version. Unsaved changes will not appear there yet."
   },
   "forms": {
     "pending": "Sending…"

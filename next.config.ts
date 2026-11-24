@@ -9,6 +9,9 @@ import { securityHeaders } from "./src/lib/security-headers";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  experimental: {
+    serverActions: { bodySizeLimit: "8mb" },
+  },
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders() },

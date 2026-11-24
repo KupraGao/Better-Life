@@ -25,7 +25,20 @@ const { db } = await import("../../src/lib/db");
 const { EditorError, createCourse, mutateCategory, mutateCourse } = await import("../../src/modules/catalog/manage");
 const { canonicalSlug, enrollForFree, listCourses, readCourse } = await import("../../src/modules/learning/service");
 
-after(() => db.$disconnect());
+const suiteLock = new pg.Client({
+  host: "127.0.0.1", port: 55432, database: "betterlife",
+  user: adminUrl.username, password: adminUrl.password,
+});
+await suiteLock.connect();
+await suiteLock.query("SELECT pg_advisory_lock(1842001)");
+after(async () => {
+  try {
+    await suiteLock.query("SELECT pg_advisory_unlock(1842001)");
+  } finally {
+    await suiteLock.end();
+    await db.$disconnect();
+  }
+});
 
 function rejected(code: string) {
   return (error: unknown) => {
@@ -144,6 +157,12 @@ test("course basics keep prices, categories, and old links inside the local data
     taken.set("level", "");
     await assert.rejects(mutateCourse(adminId, created.id, "basics", "ka", taken), rejected("duplicate"));
 
+    await db.module.create({ data: {
+      courseId: created.id, position: 1, titles: { ka: "მოდული" },
+      items: { create: { position: 1, published: true, translations: { create: {
+        locale: "ka", title: "გაკვეთილი", body: { blocks: [{ type: "paragraph", text: "ტექსტი" }] },
+      } } } },
+    } });
     await db.course.update({ where: { id: created.id }, data: { published: true } });
     await db.$transaction(async (tx) => {
       assert.equal(await enrollForFree(tx, "ka", renamed, studentId), false);
@@ -189,6 +208,16 @@ test("course basics keep prices, categories, and old links inside the local data
       SELECT id FROM app."Course" WHERE slug = ANY($1::text[])
     ) OR "categoryId" IN (SELECT id FROM app."Category" WHERE slug = $2)`, [[slug, otherSlug, renamed], categorySlug]);
     await admin.query(`DELETE FROM app."CourseSlugAlias" WHERE slug = ANY($1::text[]) OR "courseId" IN (
+      SELECT id FROM app."Course" WHERE slug = ANY($1::text[])
+    )`, [[slug, otherSlug, renamed]]);
+    await admin.query(`DELETE FROM app."ItemTranslation" WHERE "itemId" IN (
+      SELECT i.id FROM app."LearningItem" i JOIN app."Module" m ON m.id = i."moduleId"
+      WHERE m."courseId" IN (SELECT id FROM app."Course" WHERE slug = ANY($1::text[]))
+    )`, [[slug, otherSlug, renamed]]);
+    await admin.query(`DELETE FROM app."LearningItem" WHERE "moduleId" IN (
+      SELECT id FROM app."Module" WHERE "courseId" IN (SELECT id FROM app."Course" WHERE slug = ANY($1::text[]))
+    )`, [[slug, otherSlug, renamed]]);
+    await admin.query(`DELETE FROM app."Module" WHERE "courseId" IN (
       SELECT id FROM app."Course" WHERE slug = ANY($1::text[])
     )`, [[slug, otherSlug, renamed]]);
     await admin.query(`DELETE FROM app."CourseTranslation" WHERE "courseId" IN (

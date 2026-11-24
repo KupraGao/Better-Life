@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { ContactSection } from "@/components/contact-section";
 import { Icon } from "@/components/icon";
 import { Resources, type HomeCourse } from "@/components/resources";
 import { getMessages, getPublicLinks, isLocale } from "@/i18n";
@@ -12,6 +13,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const { hero, courses, about, services } = getMessages(locale);
+  const links = getPublicLinks(locale);
   const course = courses.items[0];
   const catalog: HomeCourse[] = (await listCourses(db, locale)).flatMap((item) => item.title ? [{
     slug: item.slug, title: item.title, coverImage: item.coverImage, categories: item.categories,
@@ -27,7 +29,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             <p className="hero-intro">{hero.intro}</p>
             <div className="hero-actions">
               <a className="button primary-button" href="#courses"><Icon name="cap" />{hero.courses}</a>
-              <a className="button secondary-button" href="#books"><Icon name="book" />{hero.books}</a>
+              <a className="button secondary-button" href={links.books}><Icon name="book" />{hero.books}</a>
             </div>
           </div>
           <div className="hero-art">
@@ -54,18 +56,20 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             <p className="eyebrow"><span className="kicker-rule" />{about.eyebrow}</p>
             <h2 id="about-title">{about.title}</h2>
             <p>{about.intro}</p>
-            <a className="text-link" href={getPublicLinks(locale).about}>{about.detail}<Icon name="external" size={16} /></a>
+            <a className="text-link" href={links.about}>{about.detail}<Icon name="arrow" size={16} /></a>
             <div className="programme-list" id="programmes">
               <h3>{services.title}</h3>
               {services.items.map((programme) =>
                 <a key={programme.title} href={programme.href}>
-                  <span><strong>{programme.title}</strong><span>{programme.description}</span></span><Icon name="external" size={16} />
+                  <span><strong>{programme.title}</strong><span>{programme.description}</span></span><Icon name="arrow" size={16} />
                 </a>
               )}
             </div>
           </div>
         </div>
       </section>
+
+      <ContactSection locale={locale} />
     </main>
   );
 }

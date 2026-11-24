@@ -40,11 +40,13 @@ export default async function Manage({ params, searchParams }: {
           {courses.length ? <ul className={styles.courseList}>{courses.map((course) => {
             const own = course.translations.find((row) => row.locale === locale);
             const other = course.translations.find((row) => row.locale !== locale);
-            return <li key={course.id}><Link href={`/${locale}/manage/${course.id}`}>
+            return <li className={styles.courseRow} key={course.id}>
               <span><strong>{own?.title ?? other?.title ?? course.slug}</strong>
                 <small>{course.slug}{!own && other ? ` · ${t.missingLanguage}` : ""}</small></span>
-              <span>{course.published ? t.published : t.draft} ↗</span>
-            </Link></li>;
+              <span className={styles.state}>{course.published ? t.published : t.draft}</span>
+              {actor.role === "ADMIN" && <Link className={styles.back} href={`/${locale}/manage/${course.id}/preview`}>{t.view}</Link>}
+              <Link className={styles.editLink} href={`/${locale}/manage/${course.id}`}>{t.update}</Link>
+            </li>;
           })}</ul> : <p>{t.empty}</p>}
         </section>
         {actor.role === "ADMIN" && <section className={styles.panel}>

@@ -6,7 +6,7 @@ export function Footer({ locale }: { locale: Locale }) {
   const { contact, footer, nav } = getMessages(locale);
   const links = getPublicLinks(locale);
   return (
-    <footer className="site-footer" id="contact">
+    <footer className="site-footer">
       <div className="container">
         <div className="footer-top">
           <div className="footer-brand">
@@ -15,12 +15,12 @@ export function Footer({ locale }: { locale: Locale }) {
           </div>
           <nav aria-label={nav.footer} className="footer-nav">
             <h2>{footer.navigation}</h2>
-            <a href={`/${locale}#courses`}>{nav.courses}</a>
-            <a href={`/${locale}#books`}>{nav.books}</a>
-            <a href={`/${locale}#about`}>{nav.about}</a>
+            <a href={links.courses}>{nav.courses}</a>
+            <a href={links.books}>{nav.books}</a>
+            <a href={links.about}>{nav.about}</a>
           </nav>
           <div className="footer-contact">
-            <h2>{contact.title}</h2>
+            <h2><a href={links.contact}>{contact.title}</a></h2>
             <a href={links.email}><Icon name="mail" size={18} />info.hibetterlife@gmail.com</a>
             <a href={links.phone}><Icon name="phone" size={17} />+995 511 77 71 65</a>
           </div>

@@ -23,7 +23,23 @@ process.env.DATABASE_URL = env.DATABASE_URL;
 const { db } = await import("../../src/lib/db");
 const { EditorError, authorScope, createCourse, mutateCourse } = await import("../../src/modules/catalog/manage");
 
-after(() => db.$disconnect());
+const suiteLock = new pg.Client({
+  host: "127.0.0.1",
+  port: 55432,
+  database: "betterlife",
+  user: adminUrl.username,
+  password: adminUrl.password,
+});
+await suiteLock.connect();
+await suiteLock.query("SELECT pg_advisory_lock(1842001)");
+after(async () => {
+  try {
+    await suiteLock.query("SELECT pg_advisory_unlock(1842001)");
+  } finally {
+    await suiteLock.end();
+    await db.$disconnect();
+  }
+});
 
 function denied(error: unknown) {
   assert.ok(error instanceof EditorError);

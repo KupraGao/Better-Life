@@ -4,23 +4,23 @@ import type { Locale } from "@/i18n";
 export const activeLesson = { published: true, archivedAt: null, kind: "LESSON" } as const;
 const day = 86_400_000;
 
+export function translatedLessonWhere(locale: Locale): Prisma.LearningItemWhereInput {
+  return { ...activeLesson, translations: { some: { locale } } };
+}
+
 export function visibleCourseWhere(locale: Locale): Prisma.CourseWhereInput {
   return {
     published: true,
     archivedAt: null,
     translations: { some: { locale } },
-    modules: { none: {
-      archivedAt: null,
-      items: { some: { ...activeLesson, translations: { none: { locale } } } }
-    } }
+    modules: { some: { archivedAt: null, items: { some: translatedLessonWhere(locale) } } },
   };
 }
 
 export function visibleLessonWhere(locale: Locale): Prisma.LearningItemWhereInput {
   return {
-    ...activeLesson,
-    translations: { some: { locale } },
-    module: { archivedAt: null, course: visibleCourseWhere(locale) }
+    ...translatedLessonWhere(locale),
+    module: { archivedAt: null, course: visibleCourseWhere(locale) },
   };
 }
 

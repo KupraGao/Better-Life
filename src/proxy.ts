@@ -16,8 +16,18 @@ function redirectToDefaultLocale(request: NextRequest) {
   return response;
 }
 
+function redirectRetiredContact(request: NextRequest) {
+  const match = /^\/(ka|en)\/contact\/?$/.exec(request.nextUrl.pathname);
+  if (!match) return null;
+  const response = NextResponse.redirect(new URL(`/${match[1]}#contact`, request.url), 308);
+  for (const header of securityHeaders()) response.headers.set(header.key, header.value);
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/") return redirectToDefaultLocale(request);
+  const retiredContact = redirectRetiredContact(request);
+  if (retiredContact) return retiredContact;
   if (!request.cookies.getAll().some(({ name }) => name === sessionCookie || name.startsWith(sessionCookie + "."))) return NextResponse.next();
   let response = NextResponse.next({ request });
   try {

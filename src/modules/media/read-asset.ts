@@ -21,8 +21,8 @@ export async function readAsset(store: Prisma.TransactionClient, id: string, loc
   const enrollment = actor && await store.enrollment.findUnique({
     where: { userId_courseId: { userId: actor.id, courseId } }, select: { enrolledAt: true },
   });
+  if (!enrollment) return null;
   return store.lessonAsset.findFirst({ where: { id, item: { AND: [
-    visibleLessonWhere(locale), releasedItemWhere(enrollment?.enrolledAt ?? null),
-    enrollment ? {} : { preview: true },
+    visibleLessonWhere(locale), releasedItemWhere(enrollment.enrolledAt),
   ] } }, select: payload });
 }

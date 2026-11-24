@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { parseEnv } from "node:util";
-import test from "node:test";
+import test, { after } from "node:test";
 import pg from "pg";
 
 async function localConnection(key: "DATABASE_URL" | "DB_ADMIN_URL") {
@@ -24,6 +24,16 @@ async function localConnection(key: "DATABASE_URL" | "DB_ADMIN_URL") {
   await conn.connect();
   return conn;
 }
+
+const suiteLock = await localConnection("DB_ADMIN_URL");
+await suiteLock.query("SELECT pg_advisory_lock(1842001)");
+after(async () => {
+  try {
+    await suiteLock.query("SELECT pg_advisory_unlock(1842001)");
+  } finally {
+    await suiteLock.end();
+  }
+});
 
 test("browser roles have no app table privileges and cannot read profiles", async () => {
   const conn = await localConnection("DB_ADMIN_URL");

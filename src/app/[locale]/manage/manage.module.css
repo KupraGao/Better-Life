@@ -15,12 +15,23 @@
 .workspace textarea { resize: vertical; }
 .workspace small { display: block; color: var(--muted); font: .83rem/1.45 var(--font-body); }
 .workspace button { cursor: pointer; border: 1px solid var(--blue-strong); border-radius: 7px; padding: 8px 15px; background: var(--blue-strong); color: white; }
-.workspace .check { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+.workspace .check { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; max-width: 100%; font-weight: 400; }
 .back, .asset { color: var(--blue-strong); text-decoration: underline; text-underline-offset: .2em; }
 .asset { display: block; overflow-wrap: anywhere; }
 .courseList { list-style: none; padding: 0; margin: 0; }
-.courseList a { display: flex; justify-content: space-between; align-items: center; gap: 14px; border-top: 1px solid var(--line); padding: 14px 2px; }
-.courseList a > span:last-child, .state { color: var(--blue-strong); font-size: .88rem; }
+.courseRow { display: flex; justify-content: space-between; align-items: center; gap: 14px; border-top: 1px solid var(--line); padding: 14px 2px; }
+.courseRow > span:first-child { display: grid; min-width: 0; flex: 1; }
+.courseRow small { color: var(--muted); overflow-wrap: anywhere; }
+.editLink { flex: none; border: 1px solid var(--blue-strong); border-radius: 7px; padding: 6px 12px; background: var(--blue-strong); color: white; font-weight: 650; }
+.state { color: var(--blue-strong); font-size: .88rem; }
+.saveBar { position: sticky; bottom: 12px; z-index: 4; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; width: 100%; max-width: 100%; min-width: 0; justify-self: stretch; margin-top: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: white; box-shadow: 0 8px 24px #24465c1a; }
+.saveBar p { margin: 0; min-width: 0; flex: 1 1 12rem; overflow-wrap: anywhere; }
+.saveBar button:disabled { opacity: .55; cursor: default; }
+.dialog { width: min(440px, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: 16px; padding: 22px; color: var(--ink); background: white; }
+.dialog::backdrop { background: #10233066; }
+.dialog h2 { margin-bottom: 8px; font-size: 1.3rem; }
+.dialogActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.dialogActions button:not(:first-child) { background: white; color: var(--blue-strong); }
 .toolbar, .languages, .moves, .tabs { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .toolbar { margin-bottom: 24px; }
 .toolbar form, .moves form { margin: 0; }
@@ -37,7 +48,23 @@
 .workspace summary { cursor: pointer; color: var(--blue-strong); font-weight: 600; overflow-wrap: anywhere; }
 .workspace summary small { display: inline-block; margin-inline-start: 8px; }
 .moves button { font-size: .8rem; background: white; color: var(--blue-strong); border-color: var(--line); padding: 5px 9px; }
+.assetList { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.assetItem { display: grid; gap: 8px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.assetName { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+.assetMeta { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 0; color: var(--muted); font: .83rem/1.45 var(--font-body); }
+.workspace .assetItem form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; width: 100%; min-width: 0; margin: 0; }
+.workspace .assetItem form label { flex: 1 1 14rem; width: auto; min-width: 0; }
+.workspace button.danger { background: white; color: var(--rose); border-color: color-mix(in srgb, var(--rose) 55%, white); }
+.lesson, .module { min-width: 0; max-width: 100%; }
 .lesson { border: 1px solid var(--line); padding: 10px 14px; margin: 10px 0; border-radius: 8px; }
 .lesson details { margin: 0; }
-.lesson .moves:not(:empty) { margin-top: 9px; }
-@media(max-width: 760px){ .columns { grid-template-columns: 1fr; } .workspace form { gap: 10px; } }
+.lessonBar, .moduleBar, .pendingBox { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; max-width: 100%; margin-top: 9px; }
+.pending { background: var(--paper); }
+.pendingText { margin: 0; }
+@media(max-width: 760px){
+  .columns { grid-template-columns: 1fr; }
+  .workspace form { gap: 10px; }
+  .saveBar, .lessonBar, .moduleBar, .pendingBox, .dialogActions { flex-direction: column; align-items: stretch; }
+  .saveBar button, .dialogActions button, .lessonBar button, .moduleBar button, .pendingBox button { width: 100%; }
+  .lessonBar .moves, .moduleBar .moves { width: 100%; }
+}

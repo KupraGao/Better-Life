@@ -3,21 +3,39 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { after, test } from "node:test";
 import { parseEnv } from "node:util";
+import pg from "pg";
 import { db } from "../../src/lib/db";
 import { completeLesson, enrollForFree, listCourses, myCourses, progressPercent, readCourse, readLesson } from "../../src/modules/learning/service";
 
 const fileEnv = parseEnv(readFileSync(".env", "utf8"));
 if (!process.env.DATABASE_URL && fileEnv.DATABASE_URL) process.env.DATABASE_URL = fileEnv.DATABASE_URL;
 const runtimeUrl = new URL(process.env.DATABASE_URL ?? "postgresql://invalid");
-const localUrl = new URL(parseEnv(readFileSync(".local/db/env", "utf8")).DATABASE_URL);
+const localEnv = parseEnv(readFileSync(".local/db/env", "utf8"));
+const localUrl = new URL(localEnv.DATABASE_URL);
+const adminUrl = new URL(localEnv.DB_ADMIN_URL);
 assert.equal(runtimeUrl.hostname, "127.0.0.1");
 assert.equal(runtimeUrl.port, "55432");
 assert.equal(runtimeUrl.pathname, "/betterlife");
 assert.equal(localUrl.hostname, runtimeUrl.hostname);
 assert.equal(localUrl.port, runtimeUrl.port);
 assert.equal(localUrl.pathname, runtimeUrl.pathname);
+assert.equal(adminUrl.hostname, "127.0.0.1");
+assert.equal(adminUrl.port, "55432");
 
-after(() => db.$disconnect());
+const suiteLock = new pg.Client({
+  host: "127.0.0.1", port: 55432, database: "betterlife",
+  user: adminUrl.username, password: adminUrl.password,
+});
+await suiteLock.connect();
+await suiteLock.query("SELECT pg_advisory_lock(1842001)");
+after(async () => {
+  try {
+    await suiteLock.query("SELECT pg_advisory_unlock(1842001)");
+  } finally {
+    await suiteLock.end();
+    await db.$disconnect();
+  }
+});
 
 test("published content, enrollment and progress are scoped to the course and learner", async () => {
   assert.equal(progressPercent(0, 0), 0);
@@ -58,9 +76,10 @@ test("published content, enrollment and progress are scoped to the course and le
     const before = await readCourse(tx, "en", course.slug, null);
     assert.ok(before);
     assert.equal(before.total, 2);
+    assert.equal(before.modules[0].lessons[0].accessible, false);
     assert.equal(before.modules[0].lessons[1].accessible, false);
     assert.ok(!JSON.stringify(before).includes("private body"));
-    assert.ok(await readLesson(tx, "ka", course.slug, preview.id, null));
+    assert.equal(await readLesson(tx, "ka", course.slug, preview.id, null), null);
     assert.equal(await readLesson(tx, "ka", course.slug, privateLesson.id, null), null);
     assert.equal(await completeLesson(tx, "ka", course.slug, preview.id, other), false);
 
@@ -98,20 +117,49 @@ test("published content, enrollment and progress are scoped to the course and le
     assert.deepEqual((await myCourses(tx, "ka", learner)).map((entry) => [entry.completed, entry.total, entry.percent, entry.finished]), [[2, 2, 100, true]]);
     assert.equal((await readCourse(tx, "ka", course.slug, other))?.completed, 0);
 
-    // Another published lesson with only Georgian text keeps the English course out of the catalog.
-    await tx.learningItem.create({ data: { moduleId: courseModule.id, position: 4, published: true,
+    const hidden = await tx.course.create({ data: {
+      slug: `hidden-test-${randomUUID()}`, published: true, freeEnrollment: true, translations: translations("Hidden"),
+    } });
+    const hiddenModule = await tx.module.create({ data: { courseId: hidden.id, position: 1, titles: { ka: "დაფარული", en: "Hidden" } } });
+    await tx.learningItem.create({ data: {
+      moduleId: hiddenModule.id, position: 1, published: false, preview: true,
+      translations: { create: ["ka", "en"].map((locale) => ({
+        locale, title: "Draft lesson", body: { blocks: [] },
+      })) },
+    } });
+    assert.equal(await readCourse(tx, "en", hidden.slug, learner), null);
+    assert.equal(await readCourse(tx, "ka", hidden.slug, null), null);
+    assert.ok(!(await listCourses(tx, "en")).some((entry) => entry.slug === hidden.slug));
+    assert.ok(!(await listCourses(tx, "ka")).some((entry) => entry.slug === hidden.slug));
+    assert.equal(await enrollForFree(tx, "ka", hidden.slug, learner), false);
+
+    // A published lesson that exists only in Georgian stays out of the English course.
+    const georgianOnly = await tx.learningItem.create({ data: { moduleId: courseModule.id, position: 4, published: true,
       translations: { create: { locale: "ka", title: "ახალი", body: { blocks: [] } } } } });
-    assert.equal(await readCourse(tx, "en", course.slug, learner), null);
-    assert.ok(!(await listCourses(tx, "en")).some((entry) => entry.slug === course.slug));
+    const englishCourse = await readCourse(tx, "en", course.slug, learner);
+    assert.ok(englishCourse);
+    assert.equal(englishCourse.total, 2);
+    assert.equal(englishCourse.completed, 2);
+    assert.equal(englishCourse.percent, 100);
+    assert.equal(englishCourse.finished, true);
+    assert.ok(!englishCourse.modules.some((row) => row.lessons.some((lesson) => lesson.id === georgianOnly.id)));
+    assert.ok(await readLesson(tx, "en", course.slug, privateLesson.id, learner));
+    assert.equal(await readLesson(tx, "en", course.slug, georgianOnly.id, learner), null);
+    const englishListing = (await listCourses(tx, "en")).find((entry) => entry.slug === course.slug);
+    assert.ok(englishListing);
+    assert.equal(englishListing.total, 2);
     const extended = await readCourse(tx, "ka", course.slug, learner);
     assert.equal(extended?.completed, 2);
     assert.equal(extended?.total, 3);
     assert.equal(extended?.percent, 66);
     assert.equal(extended?.finished, false);
+    assert.equal(await tx.progress.count({ where: { userId: learner } }), 2);
     await tx.course.update({ where: { id: course.id }, data: { archivedAt: new Date() } });
     assert.equal(await readLesson(tx, "ka", course.slug, preview.id, learner), null);
     assert.equal(await enrollForFree(tx, "ka", course.slug, other), false);
     assert.deepEqual(await myCourses(tx, "ka", learner), []);
+    assert.equal(await tx.progress.count({ where: { userId: learner } }), 2);
+    assert.equal(await tx.learningItem.count({ where: { id: georgianOnly.id } }), 1);
     throw rollback;
   }, { isolationLevel: "Serializable", timeout: 60_000 }), (error: unknown) => error === rollback);
 });

@@ -16,23 +16,26 @@ export function getMessages(locale: Locale): Messages {
   return messages[locale];
 }
 
-/** In-app destinations. Privacy, terms and refund have no pages here, so they return home. */
+/** Public destinations inside this app. */
 export function getPublicLinks(locale: Locale) {
   const home = `/${locale}`;
   return {
     home,
-    services: `${home}#programmes`,
+    services: `${home}/teenagers`,
     courses: `${home}/courses`,
-    books: `${home}#books`,
-    about: `${home}#about`,
+    books: `${home}/books`,
+    teenagers: `${home}/teenagers`,
+    adults: `${home}/adults`,
+    companies: `${home}/companies`,
+    about: `${home}/about`,
     contact: `${home}#contact`,
     register: `${home}/register`,
     dyslexia: `${home}/courses`,
     email: "mailto:info.hibetterlife@gmail.com",
     phone: "tel:+995511777165",
-    privacy: home,
-    terms: home,
-    refund: home
+    privacy: `${home}/privacy`,
+    terms: `${home}/terms`,
+    refund: `${home}/refund`,
   };
 }
 

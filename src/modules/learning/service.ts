@@ -1,24 +1,25 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { Locale } from "@/i18n";
-import { activeLesson, isReleased, releasedItemWhere, visibleCourseWhere, visibleLessonWhere } from "./visibility";
+import { isReleased, releasedItemWhere, translatedLessonWhere, visibleCourseWhere, visibleLessonWhere } from "./visibility";
 
 type Store = Prisma.TransactionClient;
 const uuid = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
 
 function courseProjection(locale: Locale, userId: string | null) {
   const owned = { userId: { in: userId ? [userId] : [] } };
+  const visibleItem = translatedLessonWhere(locale);
   return {
     id: true, slug: true, freeEnrollment: true, coverImage: true, level: true, priceRegular: true, priceSale: true,
     categories: { select: { category: { select: { slug: true, translations: { select: { locale: true, title: true } } } } } },
     translations: { where: { locale }, select: { title: true, description: true } },
     enrollments: { where: owned, select: { enrolledAt: true, completedAt: true } },
     modules: {
-      where: { archivedAt: null, items: { some: activeLesson } },
+      where: { archivedAt: null, items: { some: visibleItem } },
       orderBy: { position: "asc" },
       select: {
         id: true, titles: true, position: true,
         items: {
-          where: activeLesson, orderBy: { position: "asc" },
+          where: visibleItem, orderBy: { position: "asc" },
           select: {
             id: true, preview: true, releaseAt: true, delayDays: true,
             progress: { where: owned, select: { completedAt: true } },
@@ -82,7 +83,7 @@ function describeCourse(course: CourseRecord, locale: Locale) {
         title: item.translations[0].title,
         preview: item.preview,
         completed: !!membership && !!item.progress[0]?.completedAt,
-        accessible: (!!membership || item.preview) && isReleased(item, membership?.enrolledAt ?? null, now)
+        accessible: !!membership && isReleased(item, membership.enrolledAt, now)
       }))
     };
   });
@@ -110,7 +111,7 @@ export async function listCourses(store: Store, locale: Locale, categorySlug?: s
       slug: true, freeEnrollment: true, coverImage: true, level: true, priceRegular: true, priceSale: true,
       translations: { where: { locale }, select: { title: true, description: true } },
       categories: { select: { category: { select: { slug: true, translations: { select: { locale: true, title: true } } } } } },
-      modules: { where: { archivedAt: null }, select: { _count: { select: { items: { where: activeLesson } } } } }
+      modules: { where: { archivedAt: null }, select: { _count: { select: { items: { where: translatedLessonWhere(locale) } } } } }
     }
   });
   return courses.map((course) => ({
@@ -177,13 +178,13 @@ export async function readLesson(store: Store, locale: Locale, slug: string, ite
   const membership = actorId ? await store.enrollment.findUnique({
     where: { userId_courseId: { userId: actorId, courseId: course.id } }, select: { enrolledAt: true }
   }) : null;
+  if (!membership) return null;
   const item = await store.learningItem.findFirst({
     where: {
       id: itemId,
       AND: [
         visibleLessonWhere(locale), { module: { courseId: course.id } },
-        releasedItemWhere(membership?.enrolledAt ?? null),
-        membership ? {} : { preview: true }
+        releasedItemWhere(membership.enrolledAt),
       ]
     },
     select: {
@@ -219,11 +220,103 @@ export async function completeLesson(store: Store, locale: Locale, slug: string,
   });
   await store.progress.updateMany({ where: { userId: actorId, itemId, completedAt: null }, data: { completedAt: now } });
   const remaining = await store.learningItem.count({
-    where: { ...activeLesson, module: { archivedAt: null, courseId: membership.courseId },
+    where: { ...translatedLessonWhere(locale), module: { archivedAt: null, courseId: membership.courseId },
       progress: { none: { userId: actorId, completedAt: { not: null } } } }
   });
   if (remaining === 0) {
     await store.enrollment.updateMany({ where: { id: membership.id, completedAt: null }, data: { completedAt: now } });
   }
   return true;
+}
+
+export type AdminPreview = {
+  id: string;
+  slug: string;
+  published: boolean;
+  title: string;
+  description: unknown;
+  coverImage: string | null;
+  missingLanguage: boolean;
+  modules: {
+    id: string;
+    title: string;
+    fallback: boolean;
+    lessons: {
+      id: string;
+      title: string;
+      body: unknown;
+      published: boolean;
+      videoSource: string | null;
+      videoRef: string | null;
+      assets: { id: string; name: string; kind: "IMAGE" | "ATTACHMENT"; mimeType: string; sizeBytes: number }[];
+    }[];
+  }[];
+};
+
+/** Saved course for an administrator. Publication is ignored. Progress is neither read nor written. */
+export async function readAdminPreview(
+  store: Store,
+  locale: Locale,
+  courseId: string,
+  actor: { role: string },
+): Promise<AdminPreview | null> {
+  if (actor.role !== "ADMIN" || !uuid.test(courseId)) return null;
+  const course = await store.course.findFirst({
+    where: { id: courseId, archivedAt: null },
+    select: {
+      id: true, slug: true, published: true, coverImage: true,
+      translations: { select: { locale: true, title: true, description: true } },
+      modules: {
+        where: { archivedAt: null },
+        orderBy: { position: "asc" },
+        select: {
+          id: true, titles: true, position: true,
+          items: {
+            where: { kind: "LESSON", archivedAt: null },
+            orderBy: { position: "asc" },
+            select: {
+              id: true, published: true, videoSource: true, videoRef: true,
+              translations: { select: { locale: true, title: true, body: true } },
+              assets: { orderBy: { id: "asc" }, select: { id: true, name: true, kind: true, mimeType: true, sizeBytes: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!course) return null;
+  const own = course.translations.find((row) => row.locale === locale);
+  const other = course.translations.find((row) => row.locale !== locale);
+  const chosen = own ?? other;
+  return {
+    id: course.id,
+    slug: course.slug,
+    published: course.published,
+    title: chosen?.title ?? course.slug,
+    description: chosen?.description ?? { blocks: [] },
+    coverImage: course.coverImage,
+    missingLanguage: !own,
+    modules: course.modules.map((courseModule) => {
+      const named = moduleTitle(courseModule.titles, locale, courseModule.position);
+      return {
+        id: courseModule.id,
+        title: named.title,
+        fallback: named.fallback,
+        lessons: courseModule.items.map((item) => {
+          const lessonOwn = item.translations.find((row) => row.locale === locale);
+          const lessonOther = item.translations.find((row) => row.locale !== locale);
+          const lesson = lessonOwn ?? lessonOther;
+          return {
+            id: item.id,
+            title: lesson?.title ?? "",
+            body: lesson?.body ?? { blocks: [] },
+            published: item.published,
+            videoSource: item.videoSource,
+            videoRef: item.videoRef,
+            assets: item.assets,
+          };
+        }),
+      };
+    }),
+  };
 }

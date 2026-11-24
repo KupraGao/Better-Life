@@ -1,15 +1,12 @@
 import type { Messages } from "@/i18n";
 import { SubmitButton } from "@/components/submit-button";
+import { editorMessage } from "./editor-message";
 import styles from "./manage.module.css";
 
 export function Notice({ notice, t }: { notice?: string; t: Messages["manage"] }) {
-  const notices: Record<string, string> = {
-    saved: t.saved, invalid: t.invalid, denied: t.denied, stale: t.stale, duplicate: t.duplicate,
-    publish: t.publishError, video: t.videoError, file: t.fileError, price: t.priceError,
-    cover: t.coverError, category: t.categoryError,
-  };
-  if (!notice || !Object.hasOwn(notices, notice)) return null;
-  return <p className={styles.notice} role={notice === "saved" ? "status" : "alert"}>{notices[notice]}</p>;
+  if (!notice || !["saved", "removed", "replaced", "invalid", "denied", "stale", "duplicate", "publish", "video", "file", "file-size", "price", "cover", "category"].includes(notice)) return null;
+  const success = notice === "saved" || notice === "removed" || notice === "replaced";
+  return <p className={styles.notice} role={success ? "status" : "alert"}>{editorMessage(notice, t)}</p>;
 }
 
 type Action = (form: FormData) => Promise<void>;

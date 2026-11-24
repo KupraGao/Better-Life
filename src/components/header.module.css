@@ -1,9 +1,28 @@
 .header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
   background: white;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
+  transition: box-shadow 160ms ease;
+}
+
+.header[data-raised="true"] {
+  box-shadow: 0 8px 18px rgb(36 70 92 / 8%);
+}
+
+@supports (animation-timeline: scroll()) {
+  .header {
+    animation: header-raise linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 12px;
+  }
+}
+
+@keyframes header-raise {
+  from { box-shadow: none; }
+  to { box-shadow: 0 8px 18px rgb(36 70 92 / 8%); }
 }
 
 .row,
@@ -12,7 +31,7 @@
 .servicesButton,
 .tools,
 .language,
-.register {
+.account {
   display: flex;
   align-items: center;
 }
@@ -130,7 +149,7 @@
   z-index: 20;
   top: 100%;
   left: -14px;
-  min-width: 180px;
+  min-width: 220px;
   padding: 5px;
   border: 1px solid var(--line);
   border-radius: 9px;
@@ -161,31 +180,76 @@
   font-weight: 600;
 }
 
-.desktopRegister {
-  border-left: 1px solid var(--line);
-  padding-left: 18px;
+.account {
+  position: relative;
 }
 
-.register {
-  justify-content: center;
-  gap: 7px;
-  min-height: 40px;
-  padding: 8px 15px;
-  border-radius: 7px;
+.accountButton,
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  color: var(--blue-strong);
+  cursor: pointer;
+  list-style: none;
+}
+
+.avatar {
+  border-color: var(--blue-strong);
   background: var(--blue-strong);
   color: white;
-  font-size: 14px;
-  line-height: 1.35;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
 }
 
-.register:hover {
-  background: color-mix(in srgb, var(--blue-strong) 89%, black);
-  color: white;
+.accountButton::-webkit-details-marker,
+.avatar::-webkit-details-marker,
+.accountButton::marker,
+.avatar::marker {
+  display: none;
+  content: "";
+}
+
+.account .dropdown {
+  left: auto;
+  right: 0;
+  min-width: 210px;
+}
+
+.menuAction {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: start;
+  cursor: pointer;
+}
+
+.menuAction:hover,
+.menuAction:focus-visible {
+  background: var(--sky);
+  color: var(--blue-strong);
+}
+
+.menuAction:disabled {
+  cursor: progress;
+  opacity: 0.72;
 }
 
 .menuButton,
-.mobileTools,
-.mobileRegister {
+.mobileTools {
   display: none;
 }
 
@@ -269,8 +333,7 @@
     box-shadow: 0 12px 20px rgb(0 0 0 / 7%);
   }
 
-  .navigation[data-open="true"],
-  .mobileRegister {
+  .navigation[data-open="true"] {
     display: block;
   }
 
@@ -301,17 +364,41 @@
     box-shadow: none;
   }
 
-  .dropdown a {
+  .dropdown a,
+  .menuAction {
     min-height: 40px;
   }
 
-  .mobileRegister {
-    padding-top: 12px;
+  .account .dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: auto;
+    z-index: 30;
+    padding: 5px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: white;
+    box-shadow: 0 9px 25px rgb(0 0 0 / 9%);
   }
+
+}
+
+@media (max-width: 340px) {
+  .row { gap: 6px; }
+  .brand { gap: 6px; }
+  .brand span { font-size: 18px; }
+  .mobileTools { gap: 4px; }
+  .language { padding-inline: 0; gap: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .header,
   .chevron {
     transition: none;
+  }
+
+  .header {
+    animation: none;
   }
 }

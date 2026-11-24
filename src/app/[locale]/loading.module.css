@@ -1,0 +1,13 @@
+/* Header row is 79px, or 65px below 1080px, plus a 1px border.
+   Reserving that gap keeps the layout footer outside the viewport. */
+.slot {
+  min-height: calc(100vh - 79px);
+  min-height: calc(100lvh - 79px);
+}
+
+@media (max-width: 1079.98px) {
+  .slot {
+    min-height: calc(100vh - 65px);
+    min-height: calc(100lvh - 65px);
+  }
+}

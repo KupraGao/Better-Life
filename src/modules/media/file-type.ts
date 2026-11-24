@@ -1,6 +1,12 @@
 export const maxAssetSize = 768 * 1024;
 type AssetType = { mimeType: string; kind: "IMAGE" | "ATTACHMENT" };
 
+export function assetFailure(bytes: Uint8Array, name: string): "empty" | "size" | "type" | null {
+  if (bytes.length === 0) return "empty";
+  if (bytes.length > maxAssetSize) return "size";
+  return detectAsset(bytes, name) ? null : "type";
+}
+
 export function detectAsset(bytes: Uint8Array, name: string): AssetType | null {
   if (!bytes.length || bytes.length > maxAssetSize) return null;
   const header = Buffer.from(bytes.subarray(0, 8));
