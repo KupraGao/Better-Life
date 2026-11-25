@@ -1,0 +1,231 @@
+// Projection of prisma/schema.prisma. A permanent test locks the generator and models to that file.
+// This projection has no migration history. lms_dev_host is initialized with prisma db push.
+// Stage 6 moves the canonical learning schema to the private LMS repository.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["app"]
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+
+  @@schema("app")
+}
+
+enum ItemKind {
+  LESSON
+  QUIZ
+  ASSIGNMENT
+
+  @@schema("app")
+}
+
+enum LessonAssetKind {
+  IMAGE
+  ATTACHMENT
+
+  @@schema("app")
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+
+  @@schema("app")
+}
+
+model AppUser {
+  id          String             @id @db.Uuid
+  displayName String
+  role        Role               @default(STUDENT)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  enrollments Enrollment[]
+  teaching    CourseInstructor[]
+  progress    Progress[]
+
+  @@schema("app")
+}
+
+model Course {
+  id             String              @id @default(uuid()) @db.Uuid
+  slug           String              @unique
+  published      Boolean             @default(false)
+  freeEnrollment Boolean             @default(false)
+  strictMode     Boolean             @default(false)
+  coverImage     String?
+  level          CourseLevel?
+  listed         Boolean             @default(true)
+  priceRegular   Int?
+  priceSale      Int?
+  archivedAt     DateTime?           @db.Timestamptz(3)
+  createdAt      DateTime            @default(now()) @db.Timestamptz(3)
+  translations   CourseTranslation[]
+  modules        Module[]
+  instructors    CourseInstructor[]
+  enrollments    Enrollment[]
+  categories     CourseCategory[]
+  slugAliases    CourseSlugAlias[]
+
+  @@schema("app")
+}
+
+model CourseTranslation {
+  id          String @id @default(uuid()) @db.Uuid
+  courseId    String @db.Uuid
+  locale      String @db.VarChar(2)
+  title       String
+  description Json
+  course      Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([courseId, locale])
+  @@schema("app")
+}
+
+model CourseInstructor {
+  courseId String  @db.Uuid
+  userId   String  @db.Uuid
+  course   Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  user     AppUser @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, userId])
+  @@index([userId])
+  @@schema("app")
+}
+
+model CourseSlugAlias {
+  slug     String @id
+  courseId String @db.Uuid
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@schema("app")
+}
+
+model Category {
+  id           String                @id @default(uuid()) @db.Uuid
+  slug         String                @unique
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+  translations CategoryTranslation[]
+  courses      CourseCategory[]
+
+  @@schema("app")
+}
+
+model CategoryTranslation {
+  id         String   @id @default(uuid()) @db.Uuid
+  categoryId String   @db.Uuid
+  locale     String   @db.VarChar(2)
+  title      String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([categoryId, locale])
+  @@schema("app")
+}
+
+model CourseCategory {
+  courseId   String   @db.Uuid
+  categoryId String   @db.Uuid
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, categoryId])
+  @@index([categoryId])
+  @@schema("app")
+}
+
+model Module {
+  id         String         @id @default(uuid()) @db.Uuid
+  courseId   String         @db.Uuid
+  position   Int
+  titles     Json
+  archivedAt DateTime?      @db.Timestamptz(3)
+  course     Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  items      LearningItem[]
+
+  @@unique([courseId, position])
+  @@schema("app")
+}
+
+model LearningItem {
+  id           String            @id @default(uuid()) @db.Uuid
+  moduleId     String            @db.Uuid
+  kind         ItemKind          @default(LESSON)
+  position     Int
+  published    Boolean           @default(false)
+  preview      Boolean           @default(false)
+  videoSource  String?
+  videoRef     String?
+  releaseAt    DateTime?         @db.Timestamptz(3)
+  delayDays    Int?
+  archivedAt   DateTime?         @db.Timestamptz(3)
+  module       Module            @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  translations ItemTranslation[]
+  progress     Progress[]
+  assets       LessonAsset[]
+
+  @@unique([moduleId, position])
+  @@schema("app")
+}
+
+model ItemTranslation {
+  id     String       @id @default(uuid()) @db.Uuid
+  itemId String       @db.Uuid
+  locale String       @db.VarChar(2)
+  title  String
+  body   Json
+  item   LearningItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@unique([itemId, locale])
+  @@schema("app")
+}
+
+model LessonAsset {
+  id        String          @id @default(uuid()) @db.Uuid
+  itemId    String          @db.Uuid
+  objectKey String          @unique
+  name      String
+  mimeType  String
+  sizeBytes Int
+  kind      LessonAssetKind
+  data      Bytes
+  item      LearningItem    @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+  @@schema("app")
+}
+
+model Enrollment {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  courseId    String    @db.Uuid
+  enrolledAt  DateTime  @default(now()) @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  user        AppUser   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@schema("app")
+}
+
+model Progress {
+  userId      String       @db.Uuid
+  itemId      String       @db.Uuid
+  completedAt DateTime?    @db.Timestamptz(3)
+  positionSec Int          @default(0)
+  user        AppUser      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  item        LearningItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@id([userId, itemId])
+  @@index([itemId])
+  @@schema("app")
+}

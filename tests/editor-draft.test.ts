@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { accessChanged, basicsChanged, newLesson, newModule, planChanged, planForm, type AccessDraft, type BasicsDraft, type PlanDraft, type PlanLesson } from "../src/app/[locale]/manage/draft.ts";
+import { accessChanged, basicsChanged, newLesson, newModule, planChanged, planForm, type AccessDraft, type BasicsDraft, type PlanDraft, type PlanLesson } from "@kupragao/lms-ui";
+import { basicsChanged as hostBasicsChanged } from "../src/app/[locale]/manage/draft.ts";
 
 const basics: BasicsDraft = {
   title: "საფუძვლები", body: "აღწერა", slug: "basics", cover: "", level: "", categoryIds: ["b", "a"],
@@ -8,6 +9,7 @@ const basics: BasicsDraft = {
 const access: AccessDraft = { mode: "paid", priceRegular: "240", priceSale: "160", listed: true };
 
 test("a tab is dirty only when its own fields change", () => {
+  assert.equal(basicsChanged, hostBasicsChanged);
   assert.equal(basicsChanged(basics, { ...basics, categoryIds: ["a", "b"] }), false);
   assert.equal(basicsChanged({ ...basics, title: "ახალი" }, basics), true);
   assert.equal(basicsChanged({ ...basics, categoryIds: ["a"] }, basics), true);

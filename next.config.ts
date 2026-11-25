@@ -7,6 +7,7 @@ import { securityHeaders } from "./src/lib/security-headers";
 // redirects() finishes with resHeaders cleared, so a config redirect cannot carry it.
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@kupragao/lms-contracts", "@kupragao/lms-core", "@kupragao/lms-ui"],
   poweredByHeader: false,
   devIndicators: false,
   experimental: {

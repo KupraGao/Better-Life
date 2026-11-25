@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  font: 16px/1.5 system-ui, sans-serif;
+  color: #1c1c1c;
+  background: #f4f4f4;
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+nav a {
+  margin-right: 0.75rem;
+}
+
+section {
+  margin-top: 1.25rem;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  main {
+    padding: 0.75rem;
+  }
+}

@@ -3,12 +3,12 @@
 import { redirect, notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import type { Prisma } from "@/generated/prisma/client";
+import type { LearningStore } from "@/modules/host/store";
 import { requireUser } from "@/modules/identity/session";
 import { courseLocale, coursePath, lessonPath } from "./labels";
 import { completeLesson, enrollForFree } from "./service";
 
-async function commitLearningChange(operation: (tx: Prisma.TransactionClient) => Promise<boolean>) {
+async function commitLearningChange(operation: (tx: LearningStore) => Promise<boolean>) {
   for (let attempt = 1; ; attempt++) {
     try {
       return await db.$transaction(operation, { isolationLevel: "Serializable" });

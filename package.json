@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "engines": {
     "node": "^24.0.0"
   },
@@ -12,9 +15,13 @@
     "start": "next start",
     "typecheck": "prisma generate && next typegen && tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
-    "test:integration": "tsx --conditions=react-server --test tests/integration/database.test.ts tests/integration/learning.test.ts tests/integration/roles.test.ts tests/integration/course-basics.test.ts tests/integration/lesson-assets.test.ts tests/integration/editor-save.test.ts"
+    "test:integration": "tsx --conditions=react-server --test tests/integration/database.test.ts tests/integration/learning.test.ts tests/integration/roles.test.ts tests/integration/course-basics.test.ts tests/integration/lesson-assets.test.ts tests/integration/editor-save.test.ts",
+    "test:permanent": "tsx --test tests/host-boundary.test.ts tests/video-port.test.ts tests/package-boundary.test.ts tests/dev-host.test.ts && tsx --test tests/dev-host-integration.test.ts && tsx --conditions=react-server --test tests/editor-draft.test.ts && npm run test:integration"
   },
   "dependencies": {
+    "@kupragao/lms-contracts": "0.1.0",
+    "@kupragao/lms-core": "0.1.0",
+    "@kupragao/lms-ui": "0.1.0",
     "@prisma/adapter-pg": "^7",
     "@prisma/client": "^7",
     "@supabase/ssr": "0.12.7",
@@ -26,13 +33,13 @@
     "server-only": "0.0.1"
   },
   "devDependencies": {
-    "@types/pg": "^8",
     "@types/node": "24.19.2",
+    "@types/pg": "^8",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "embedded-postgres": "18.7.0-beta.19",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.6",
-    "embedded-postgres": "18.7.0-beta.19",
     "prisma": "^7",
     "tsx": "^4",
     "typescript": "5.9.3"
